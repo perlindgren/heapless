@@ -89,9 +89,11 @@ extern crate untagged_option;
 pub use vec::Vec;
 pub use ring_buffer::RingBuffer;
 pub use string::String;
+pub use svec::String2;
 
 mod cfail;
 mod vec;
+mod svec;
 mod string;
 pub mod ring_buffer;
 
