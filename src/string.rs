@@ -30,11 +30,11 @@ where
         }
     }
 
-    // /// Returns the maximum number of elements the vector can hold
-    // pub fn capacity(&self) -> usize {
-    //     let buffer: &[T] = unsafe { self.buffer.as_ref() };
-    //     buffer.len()
-    // }
+    /// Returns the maximum number of elements the vector can hold
+    pub fn capacity(&self) -> usize {
+        let buffer: &[u8] = unsafe { self.buffer.as_ref() };
+        buffer.len()
+    }
 
     // /// Clears the vector, removing all values.
     // pub fn clear(&mut self) {
@@ -131,7 +131,7 @@ where
         let buffer: &mut [u8] = unsafe { self.buffer.as_mut() };
         let len = s.len().min(buffer.len());
         self.len = len;
-        buffer[0..len].copy_from_slice(&s.as_bytes()[0..len])
+        buffer[0..len].copy_from_slice(&s.as_bytes()[0..len]);
     }
 
     ///
@@ -150,6 +150,43 @@ where
             Err(_) => "could not convert to String",
         };
         slice.fmt(f)
+    }
+}
+
+impl<A> fmt::Display for String<A>
+where
+    A: Unsize<[u8]>,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let slice: &str = match str::from_utf8(&**self) {
+            Ok(s) => s,
+            Err(_) => "could not convert to String",
+        };
+        slice.fmt(f)
+    }
+}
+
+impl<A> fmt::Write for String<A>
+where
+    A: Unsize<[u8]>,
+{
+    fn write_str(&mut self, s: &str) -> Result<(), fmt::Error> {
+        let buffer: &mut [u8] = unsafe { self.buffer.as_mut() };
+        let start = self.len;
+        let end = start.saturating_add(s.len());
+        let new_len = end.min(buffer.len());
+        self.len = new_len;
+        buffer[start..self.len].copy_from_slice(&s.as_bytes()[0..self.len.saturating_sub(start)]);
+        Ok(())
+    }
+
+    fn write_char(&mut self, c: char) -> Result<(), fmt::Error> {
+        let buffer: &mut [u8] = unsafe { self.buffer.as_mut() };
+        if self.len < buffer.len() {
+            buffer[self.len] = c as u8;
+            self.len = self.len.saturating_add(1);
+        }
+        Ok(())
     }
 }
 
