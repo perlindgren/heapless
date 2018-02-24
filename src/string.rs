@@ -60,10 +60,10 @@ where
     }
 
     ///
-    /// not implemented
-    // pub fn into_bytes(self) -> Vec<u8, A> {
-    //     unsafe { transmute::<String<A>, Vec<u8, A>>(self) }
-    // }
+    pub fn into_bytes(self) -> Vec<u8, A> {
+        // unsafe { transmute::<String<A>, Vec<u8, A>>(self) }
+        unimplemented!();
+    }
 
     ///
     pub fn as_str(&self) -> &str {
@@ -95,89 +95,77 @@ where
             self.len = self.len.saturating_add(1);
         }
     }
-    // /// Removes the last element from a vector and return it, or `None` if it's empty
-    // pub fn pop(&mut self) -> Option<T> {
-    //     let buffer: &[T] = unsafe { self.buffer.as_ref() };
 
-    //     if self.len != 0 {
-    //         self.len -= 1;
-    //         let item = unsafe { ptr::read(&buffer[self.len]) };
-    //         Some(item)
+    ///
+    pub fn as_bytes(&self) -> &[u8] {
+        unsafe { self.buffer.as_ref() }
+    }
+
+    ///
+    pub fn as_bytes_mut(&mut self) -> &mut [u8] {
+        unsafe { self.buffer.as_mut() }
+    }
+
+    ///
+    pub fn truncate(&mut self, new_len: usize) {
+        self.len = self.len.min(new_len);
+    }
+
+    ///
+    pub fn pop(&mut self) -> Option<char> {
+        let buffer: &[u8] = unsafe { self.buffer.as_ref() };
+        if self.len > 0 {
+            self.len = self.len.saturating_sub(1);
+            Some(buffer[self.len] as char)
+        } else {
+            None
+        }
+    }
+
+    ///
+    pub fn remove(&mut self, idx: usize) -> char {
+        unimplemented!();
+    }
+
+    ///
+    pub fn insert(&mut self, idx: usize, ch: char) {
+        unimplemented!();
+    }
+
+    ///
+    pub fn insert_str(&mut self, idx: usize, string: &str) {
+        unimplemented!();
+    }
+
+    ///
+    pub unsafe fn as_mut_vec(&mut self) -> &mut Vec<u8, A> {
+        unimplemented!();
+    }
+
+    ///
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
+    ///
+    // pub fn split_off<B>(&mut self, at: usize) -> String<B>
+    // where
+    //     B: Unsize<[u8]>,
+    // {
+    //     let buffer: &mut [u8] = unsafe { self.buffer.as_mut() };
+    //     if self.len <= at {
+    //         let (mut b1, mut b2) = buffer.split_at_mut(at);
+    //         self.buffer = b1;
+    //         String {
+    //             buffer: b2,
+    //             len: b2.len(),
+    //         }
     //     } else {
-    //         None
-    //     }
-    // }
+    //         String {
+    //             buffer: UntaggedOption::none(),
 
-    // /// Appends an element to the back of the collection
-    // ///
-    // /// Returns `BufferFullError` if the vector is full
-    // pub fn push(&mut self, item: T) -> Result<(), BufferFullError> {
-    //     let capacity = self.capacity();
-    //     let buffer: &mut [T] = unsafe { self.buffer.as_mut() };
-
-    //     if self.len < capacity {
-    //         // NOTE(ptr::write) the memory slot that we are about to write to is uninitialized. We
-    //         // use `ptr::write` to avoid running `T`'s destructor on the uninitialized memory
-    //         unsafe { ptr::write(&mut buffer[self.len], item) }
-    //         self.len += 1;
-    //         Ok(())
-    //     } else {
-    //         Err(BufferFullError)
-    //     }
-    // }
-
-    // /// Shortens the vector, keeping the first `len` elements and dropping the rest.
-    // pub fn truncate(&mut self, len: usize) {
-    //     unsafe {
-    //         // drop any extra elements
-    //         while len < self.len {
-    //             // decrement len before the drop_in_place(), so a panic on Drop
-    //             // doesn't re-drop the just-failed value.
-    //             self.len -= 1;
-    //             let len = self.len;
-    //             ptr::drop_in_place(self.get_unchecked_mut(len));
     //         }
     //     }
-    // }
-
-    // /// Resizes the Vec in-place so that len is equal to new_len.
-    // ///
-    // /// If new_len is greater than len, the Vec is extended by the
-    // /// difference, with each additional slot filled with value. If
-    // /// new_len is less than len, the Vec is simply truncated.
-    // ///
-    // /// See also [`resize_default`].
-    // pub fn resize(&mut self, new_len: usize, value: T) -> Result<(), BufferFullError>
-    // where
-    //     T: Clone,
-    // {
-    //     if new_len > self.capacity() {
-    //         return Err(BufferFullError);
-    //     }
-
-    //     if new_len > self.len {
-    //         while self.len < new_len {
-    //             self.push(value.clone())?;
-    //         }
-    //     } else {
-    //         self.truncate(new_len);
-    //     }
-
-    //     Ok(())
-    // }
-
-    // /// Resizes the `Vec` in-place so that `len` is equal to `new_len`.
-    // ///
-    // /// If `new_len` is greater than `len`, the `Vec` is extended by the
-    // /// difference, with each additional slot filled with `Default::default()`.
-    // /// If `new_len` is less than `len`, the `Vec` is simply truncated.
-    // ///
-    // /// See also [`resize`].
-    // pub fn resize_default(&mut self, new_len: usize) -> Result<(), BufferFullError>
-    // where
-    //     T: Clone + Default,
-    // {
-    //     self.resize(new_len, T::default())
     // }
 
     ///
