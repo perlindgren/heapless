@@ -1,4 +1,4 @@
-use core::marker::Unsize;
+use core::marker::{PhantomData, Unsize};
 use core::{fmt, ops, ptr, slice, str};
 use core::str::Utf8Error;
 
@@ -15,6 +15,8 @@ where
 {
     vec: Vec<u8, A>,
 }
+
+use untagged_option::UntaggedOption;
 
 impl<A> String2<A>
 where
@@ -127,39 +129,52 @@ where
         self.vec.len == 0
     }
 
-    // ///
-    // // pub fn split_off<B>(&mut self, at: usize) -> String<B>
-    // // where
-    // //     B: Unsize<[u8]>,
-    // // {
-    // //     let buffer: &mut [u8] = unsafe { self.buffer.as_mut() };
-    // //     if self.len <= at {
-    // //         let (mut b1, mut b2) = buffer.split_at_mut(at);
-    // //         self.buffer = b1;
-    // //         String {
-    // //             buffer: b2,
-    // //             len: b2.len(),
-    // //         }
-    // //     } else {
-    // //         String {
-    // //             buffer: UntaggedOption::none(),
+    ///
+    // pub fn split_off<B>(&mut self, at: usize) -> String2<B>
+    // where
+    //     B: Unsize<[u8]>,
+    // {
+    //     let buffer: &mut [u8] = unsafe { self.vec.buffer.as_mut() };
+    //     if self.vec.len <= at {
+    //         let (mut b1, mut b2) = buffer.split_at_mut(at);
+    //         //self.vec.buffer = UntaggedOption::some(A);
 
-    // //         }
-    // //     }
-    // // }
-
-    // ///
-    // pub fn from<'a>(&mut self, s: &'a str) {
-    //     let buffer: &mut [u8] = unsafe { self.buffer.as_mut() };
-    //     let len = s.len().min(buffer.len());
-    //     self.len = len;
-    //     buffer[0..len].copy_from_slice(&s.as_bytes()[0..len]);
+    //         String2 {
+    //             vec: Vec {
+    //                 _marker: PhantomData,
+    //                 buffer: UntaggedOption::none(),
+    //                 len: b2.len(),
+    //             },
+    //         }
+    //     } else {
+    //         String2 {
+    //             vec: Vec {
+    //                 _marker: PhantomData,
+    //                 buffer: UntaggedOption::none(),
+    //                 len: 0,
+    //             },
+    //         }
+    //     }
     // }
 
-    // ///
-    // pub fn len(&self) -> usize {
-    //     self.len
-    // }
+    ///
+    pub fn from<'a>(&mut self, s: &'a str) -> Result<(), BufferFullError> {
+        match self.vec.len <= s.len() {
+            true => {
+                let buffer: &mut [u8] = unsafe { self.vec.buffer.as_mut() };
+                let len = s.len().min(buffer.len());
+                self.vec.len = len;
+                buffer[0..len].copy_from_slice(&s.as_bytes()[0..len]);
+                Ok(())
+            }
+            _ => Err(BufferFullError),
+        }
+    }
+
+    ///
+    pub fn len(&self) -> usize {
+        self.vec.len
+    }
 }
 
 impl<A> fmt::Debug for String2<A>
@@ -190,74 +205,62 @@ where
     // }
 }
 
-// impl<A> ops::Deref for String<A>
-// where
-//     A: Unsize<[u8]>,
-// {
-//     type Target = [u8];
+impl<A> ops::Deref for String2<A>
+where
+    A: Unsize<[u8]>,
+{
+    type Target = str;
 
-//     fn deref(&self) -> &[u8] {
-//         let buffer: &[u8] = unsafe { self.buffer.as_ref() };
-//         &buffer[..self.len]
-//     }
-// }
+    fn deref(&self) -> &str {
+        self.as_str()
+    }
+}
 
-// impl<A> ops::DerefMut for String<A>
-// where
-//     A: Unsize<[u8]>,
-// {
-//     fn deref_mut(&mut self) -> &mut [u8] {
-//         let len = self.len();
-//         let buffer: &mut [u8] = unsafe { self.buffer.as_mut() };
-//         &mut buffer[..len]
-//     }
-// }
+impl<A> ops::DerefMut for String2<A>
+where
+    A: Unsize<[u8]>,
+{
+    fn deref_mut(&mut self) -> &mut str {
+        self.as_mut_str()
+    }
+}
 
-// impl<A> Drop for String<A>
-// where
-//     A: Unsize<[u8]>,
-// {
-//     fn drop(&mut self) {
-//         unsafe { ptr::drop_in_place(&mut self[..]) }
-//     }
-// }
+impl<'a, A> IntoIterator for &'a String2<A>
+where
+    A: Unsize<[u8]>,
+{
+    type Item = &'a u8;
+    type IntoIter = slice::Iter<'a, u8>;
 
-// impl<'a, A> IntoIterator for &'a String<A>
-// where
-//     A: Unsize<[u8]>,
-// {
-//     type Item = &'a u8;
-//     type IntoIter = slice::Iter<'a, u8>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.vec.iter()
+    }
+}
 
-//     fn into_iter(self) -> Self::IntoIter {
-//         self.iter()
-//     }
-// }
+impl<'a, A> IntoIterator for &'a mut String2<A>
+where
+    A: Unsize<[u8]>,
+{
+    type Item = &'a mut u8;
+    type IntoIter = slice::IterMut<'a, u8>;
 
-// impl<'a, A> IntoIterator for &'a mut String<A>
-// where
-//     A: Unsize<[u8]>,
-// {
-//     type Item = &'a mut u8;
-//     type IntoIter = slice::IterMut<'a, u8>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.vec.iter_mut()
+    }
+}
 
-//     fn into_iter(self) -> Self::IntoIter {
-//         self.iter_mut()
-//     }
-// }
+impl<A, B> PartialEq<String2<B>> for String2<A>
+where
+    A: Unsize<[u8]>,
+    B: Unsize<[u8]>,
+{
+    fn eq(&self, rhs: &String2<B>) -> bool {
+        PartialEq::eq(&**self, &**rhs)
+    }
+}
 
-// impl<A, B> PartialEq<String<B>> for String<A>
-// where
-//     A: Unsize<[u8]>,
-//     B: Unsize<[u8]>,
-// {
-//     fn eq(&self, rhs: &String<B>) -> bool {
-//         PartialEq::eq(&**self, &**rhs)
-//     }
-// }
-
-// impl<A> Eq for String<A>
-// where
-//     A: Unsize<[u8]>,
-// {
-// }
+impl<A> Eq for String2<A>
+where
+    A: Unsize<[u8]>,
+{
+}
