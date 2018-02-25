@@ -225,30 +225,6 @@ where
     }
 }
 
-impl<'a, A> IntoIterator for &'a String2<A>
-where
-    A: Unsize<[u8]>,
-{
-    type Item = &'a u8;
-    type IntoIter = slice::Iter<'a, u8>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.vec.iter()
-    }
-}
-
-impl<'a, A> IntoIterator for &'a mut String2<A>
-where
-    A: Unsize<[u8]>,
-{
-    type Item = &'a mut u8;
-    type IntoIter = slice::IterMut<'a, u8>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.vec.iter_mut()
-    }
-}
-
 impl<A, B> PartialEq<String2<B>> for String2<A>
 where
     A: Unsize<[u8]>,
