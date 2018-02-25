@@ -1,5 +1,5 @@
-use core::marker::{PhantomData, Unsize};
-use core::{fmt, ops, ptr, slice, str};
+use core::marker::Unsize;
+use core::{fmt, ops, str};
 use core::str::Utf8Error;
 
 use {BufferFullError, Vec};
@@ -15,8 +15,6 @@ where
 {
     vec: Vec<u8, A>,
 }
-
-use untagged_option::UntaggedOption;
 
 impl<A> String2<A>
 where
