@@ -1,20 +1,26 @@
 //#![no_std]
 extern crate heapless;
 use std::fmt::Write;
-use std::str;
+use heapless::{String, Vec};
 
 fn main() {
-    let mut v: heapless::Vec<u8, [u8; 8]> = heapless::Vec::new();
+    let mut s: String<[u8; 4]> = String::new();
+    assert!(s.capacity() == 4);
+
+    let mut v: Vec<u8, [u8; 8]> = Vec::new();
     v.push('a' as u8);
     v.push('b' as u8);
-    println!("v {:?}", v);
 
-    let mut s: heapless::String2<[u8; 4]> = heapless::String2::new();
-    write!(&mut s, "t {}", 1).unwrap();
-    println!("{:?} capacity {}", s, s.capacity());
+    let s = String::from_utf8(v).unwrap();
 
-    write!(&mut s, "2").unwrap();
-    println!("{:?} capacity {}", s, s.capacity());
+    // assert!(s.len() == 3);
+    // assert!(s.as_str() == "t 1");
+    // write!(&mut s, "t {}", 1).unwrap();
+
+    // println!("{:?} capacity {}, length {}", s, s.capacity(), s.len());
+
+    // write!(&mut s, "2").unwrap();
+    // println!("{:?} capacity {}, length {}", s, s.capacity(), s.len());
 
     // s.from_utf8(&v);
     // println!("from_utf8 s {:?}", s);
