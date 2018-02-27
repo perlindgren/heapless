@@ -59,7 +59,27 @@ where
     ///
     /// # Examples
     ///
+    /// ```
+    /// let mut v: Vec<u8, [u8; 8]> = Vec::new();
+    /// v.push('a' as u8);
+    /// v.push('b' as u8);
+    /// ```
     ///
+    /// let s = String::from_utf8(v).unwrap();
+    /// assert!(s.len() == 2);
+    ///
+    /// Incorrect bytes:
+    ///
+    /// ```
+    /// // some invalid bytes, in a vector
+    /// let mut v: Vec<u8, [u8; 8]> = Vec::new();
+    /// v.push(0);
+    /// v.push(159);
+    /// v.push(146);
+    /// v.push(150);
+    /// assert!(String::from_utf8(v).is_err());
+    /// '''
+
     pub fn from_utf8(vec: Vec<u8, A>) -> Result<String<A>, Utf8Error> {
         {
             let buffer: &[u8] = unsafe { vec.buffer.as_ref() };
@@ -68,7 +88,29 @@ where
         Ok(String { vec: vec })
     }
 
-    /// Exa
+    /// Converts a vector of bytes to a `String` without checking that the
+    /// string contains valid UTF-8.
+    ///
+    /// See the safe version, [`from_utf8`], for more details.
+
+    pub unsafe fn from_utf8_unchecked(vec: Vec<u8, A>) -> String<A> {
+        String { vec: vec }
+    }
+
+    /// Converts a `String` into a byte vector.
+    ///
+    /// This consumes the `String`, so we do not need to copy its contents.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// let s = String::from("hello");
+    /// let bytes = s.into_bytes();
+    ///
+    /// assert_eq!(&[104, 101, 108, 108, 111][..], &bytes[..]);
+    /// ```
     pub fn into_bytes(self) -> Vec<u8, A> {
         self.vec
     }
@@ -92,9 +134,8 @@ where
         let end = start.saturating_add(s.len());
         let new_len = end.min(buffer.len());
         self.vec.len = new_len;
-        buffer[start..self.vec.len].copy_from_slice(
-            &s.as_bytes()[0..self.vec.len.saturating_sub(start)],
-        );
+        buffer[start..self.vec.len]
+            .copy_from_slice(&s.as_bytes()[0..self.vec.len.saturating_sub(start)]);
     }
 
     ///
