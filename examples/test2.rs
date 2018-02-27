@@ -89,9 +89,16 @@ fn main() {
     s.push_str("cd");
     println!("s = {:?}", s);
 
-    // test from
-    let s: String<[u8; 8]> = String::from("abc");
+    // test push
+    let mut s: String<[u8; 8]> = String::from("abc");
+
+    s.push('1').unwrap();
+    s.push('2').unwrap();
+    s.push('3').unwrap();
+
+    assert!("abc123" == s.as_str());
     println!("s = {:?}", s);
+    // assert_eq!("abc123", s); // todo
 
     //
     // assert!(s.len() == 3);

@@ -59,22 +59,6 @@ where
         new
     }
 
-    /// Returns the maximum number of elements the String can hold
-    ///
-    /// # Examples
-    ///
-    /// Basic usage:
-    ///
-    /// ```
-    /// let mut s: String<[u8; 4]> = String::new();
-    /// assert!(s.capacity() == 4);
-    /// ```
-    #[inline]
-    pub fn capacity(&self) -> usize {
-        let buffer: &[u8] = unsafe { self.vec.buffer.as_ref() };
-        buffer.len()
-    }
-
     /// Converts a vector of bytes to a `String`.
     ///
     /// A string slice ([`&str`]) is made of bytes ([`u8`]), and a vector of bytes
@@ -209,7 +193,43 @@ where
             .copy_from_slice(&s.as_bytes()[0..self.vec.len.saturating_sub(start)]);
     }
 
+    /// Returns the maximum number of elements the String can hold
     ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// let mut s: String<[u8; 4]> = String::new();
+    /// assert!(s.capacity() == 4);
+    /// ```
+    #[inline]
+    pub fn capacity(&self) -> usize {
+        let buffer: &[u8] = unsafe { self.vec.buffer.as_ref() };
+        buffer.len()
+    }
+
+    /// Appends the given [`char`] to the end of this `String`.
+    /// Assumes ch.len_utf8() == 1
+    ///
+    /// [`char`]: ../../std/primitive.char.html
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// let mut s: String<[u8; 8]> = String::from("abc");
+    ///
+    /// s.push('1').unwrap();
+    /// s.push('2').unwrap();
+    /// s.push('3').unwrap();
+    ///
+    /// assert!("abc123" == s.as_str());
+    ///
+    /// assert_eq!("abc123", s);
+    /// ```
+    #[inline]
     pub fn push(&mut self, c: char) -> Result<(), BufferFullError> {
         self.vec.push(c as u8)
     }
