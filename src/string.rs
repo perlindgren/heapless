@@ -29,8 +29,10 @@ where
     ///
     /// Basic usage:
     ///
+    /// ```
     /// let mut s: String<[u8; 4]> = String::new();
-    ///
+    /// ```
+    #[inline]
     pub const fn new() -> Self {
         String { vec: Vec::new() }
     }
@@ -39,9 +41,11 @@ where
     ///
     /// # Examples
     ///
+    /// ```
     /// let mut s: String<[u8; 4]> = String::new();
     /// assert!(s.capacity() == 4);
-    ///
+    /// ```
+    #[inline]
     pub fn capacity(&self) -> usize {
         let buffer: &[u8] = unsafe { self.vec.buffer.as_ref() };
         buffer.len()
@@ -61,8 +65,8 @@ where
     ///
     /// ```
     /// let mut v: Vec<u8, [u8; 8]> = Vec::new();
-    /// v.push('a' as u8);
-    /// v.push('b' as u8);
+    /// v.push('a' as u8).unwrap();
+    /// v.push('b' as u8).unwrap();
     /// ```
     ///
     /// let s = String::from_utf8(v).unwrap();
@@ -73,13 +77,13 @@ where
     /// ```
     /// // some invalid bytes, in a vector
     /// let mut v: Vec<u8, [u8; 8]> = Vec::new();
-    /// v.push(0);
-    /// v.push(159);
-    /// v.push(146);
-    /// v.push(150);
+    /// v.push(0).unwrap();
+    /// v.push(159).unwrap();
+    /// v.push(146).unwrap();
+    /// v.push(150).unwrap();
     /// assert!(String::from_utf8(v).is_err());
-    /// '''
-
+    /// ```
+    #[inline]
     pub fn from_utf8(vec: Vec<u8, A>) -> Result<String<A>, Utf8Error> {
         {
             let buffer: &[u8] = unsafe { vec.buffer.as_ref() };
@@ -92,7 +96,7 @@ where
     /// string contains valid UTF-8.
     ///
     /// See the safe version, [`from_utf8`], for more details.
-
+    #[inline]
     pub unsafe fn from_utf8_unchecked(vec: Vec<u8, A>) -> String<A> {
         String { vec: vec }
     }
@@ -106,28 +110,78 @@ where
     /// Basic usage:
     ///
     /// ```
-    /// let s = String::from("hello");
-    /// let bytes = s.into_bytes();
+    /// let mut v: Vec<u8, [u8; 8]> = Vec::new();
+    /// v.push('a' as u8).unwrap();
+    /// v.push('b' as u8).unwrap();
     ///
-    /// assert_eq!(&[104, 101, 108, 108, 111][..], &bytes[..]);
+    /// let s = String::from_utf8(v).unwrap();
+    /// let b = s.into_bytes();
+    /// assert!(b.len() == 2);
+    ///
+    /// assert_eq!(&['a' as u8, 'b' as u8], &b[..]);
     /// ```
+    #[inline]
     pub fn into_bytes(self) -> Vec<u8, A> {
         self.vec
     }
 
+    /// Extracts a string slice containing the entire string.
     ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// let mut v: Vec<u8, [u8; 8]> = Vec::new();
+    /// v.push('a' as u8).unwrap();
+    /// v.push('b' as u8).unwrap();
+    ///
+    /// let mut s = String::from_utf8(v).unwrap();
+    /// assert!(s.as_str() == "ab");
+    ///
+    /// let s1 = s.as_str();
+    /// s.push('c'); // <- cannot borrow `s` as mutable because it is also borrowed as immutable
+    /// ```
+    #[inline]
     pub fn as_str(&self) -> &str {
         let buffer: &[u8] = unsafe { self.vec.buffer.as_ref() };
         unsafe { str::from_utf8_unchecked(&buffer[..self.vec.len]) }
     }
 
+    /// Converts a `String` into a mutable string slice.
     ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// let mut v: Vec<u8, [u8; 8]> = Vec::new();
+    /// v.push('a' as u8).unwrap();
+    /// v.push('b' as u8).unwrap();
+    ///
+    /// let mut s = String::from_utf8(v).unwrap();
+    /// let s = s.as_mut_str();
+    /// s.make_ascii_uppercase();
+    /// ```
+    #[inline]
     pub fn as_mut_str(&mut self) -> &mut str {
         let buffer: &mut [u8] = unsafe { self.vec.buffer.as_mut() };
         unsafe { str::from_utf8_unchecked_mut(&mut buffer[..self.vec.len]) }
     }
 
+    /// Appends a given string slice onto the end of this `String`.
     ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// let mut s = String::from("foo");
+    ///
+    /// s.push_str("bar");
+    ///
+    /// assert_eq!("foobar", s);
+    /// ```
     pub fn push_str(&mut self, s: &str) {
         let buffer: &mut [u8] = unsafe { self.vec.buffer.as_mut() };
         let start = self.vec.len;
@@ -167,17 +221,17 @@ where
     }
 
     ///
-    pub fn remove(&mut self, idx: usize) -> char {
+    pub fn remove(&mut self, _idx: usize) -> char {
         unimplemented!();
     }
 
     ///
-    pub fn insert(&mut self, idx: usize, ch: char) {
+    pub fn insert(&mut self, _idx: usize, _ch: char) {
         unimplemented!();
     }
 
     ///
-    pub fn insert_str(&mut self, idx: usize, string: &str) {
+    pub fn insert_str(&mut self, _idx: usize, _string: &str) {
         unimplemented!();
     }
 

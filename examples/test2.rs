@@ -1,21 +1,19 @@
 //#![no_std]
 extern crate heapless;
-use std::fmt::Write;
+//use std::fmt::Write;
 use heapless::{String, Vec};
 
-fn takes_str(s: &str) {}
-///
-/// let s = String::from("Hello");
-///
-/// takes_str(&s);
-///
+fn takes_str(_s: &str) {}
+
 fn main() {
+    // test capacity
     let mut s: String<[u8; 4]> = String::new();
     assert!(s.capacity() == 4);
 
+    // test from_utf8
     let mut v: Vec<u8, [u8; 8]> = Vec::new();
-    v.push('a' as u8);
-    v.push('b' as u8);
+    v.push('a' as u8).unwrap();
+    v.push('b' as u8).unwrap();
 
     let s = String::from_utf8(v).unwrap();
     // v.push('c' as u8); // v has been moved to s (no copy)
@@ -25,35 +23,75 @@ fn main() {
 
     println!("{:?}", s);
 
+    // test from_utf8
     let mut v: Vec<u8, [u8; 8]> = Vec::new();
-    v.push(240);
-    v.push(159);
-    v.push(146);
-    v.push(150);
+    v.push(240).unwrap();
+    v.push(159).unwrap();
+    v.push(146).unwrap();
+    v.push(150).unwrap();
 
     let s = String::from_utf8(v);
     println!("s =  {:?}", s);
 
+    // test illegal from_utf8
     let mut v: Vec<u8, [u8; 8]> = Vec::new();
-    v.push(0);
-    v.push(159);
-    v.push(146);
-    v.push(150);
+    v.push(0).unwrap();
+    v.push(159).unwrap();
+    v.push(146).unwrap();
+    v.push(150).unwrap();
 
     let s = String::from_utf8(v);
     println!("s =  {:?}", s);
     assert!(s.is_err());
 
+    // test from_utf8_unchecked
     let mut v: Vec<u8, [u8; 8]> = Vec::new();
-    v.push(240);
-    v.push(159);
-    v.push(146);
-    v.push(150);
+    v.push(240).unwrap();
+    v.push(159).unwrap();
+    v.push(146).unwrap();
+    v.push(150).unwrap();
 
     let s = unsafe { String::from_utf8_unchecked(v) };
     println!("s =  {:?}", s);
     assert!(s.len() == 4);
 
+    // test into_bytes
+    let mut v: Vec<u8, [u8; 8]> = Vec::new();
+    v.push('a' as u8).unwrap();
+    v.push('b' as u8).unwrap();
+
+    let s = String::from_utf8(v).unwrap();
+    let b = s.into_bytes();
+    assert!(b.len() == 2);
+
+    assert_eq!(&['a' as u8, 'b' as u8], &b[..]);
+
+    // test as_str
+    let mut v: Vec<u8, [u8; 8]> = Vec::new();
+    v.push('a' as u8).unwrap();
+    v.push('b' as u8).unwrap();
+
+    let mut s = String::from_utf8(v).unwrap();
+    assert!(s.as_str() == "ab");
+    let s1 = s.as_str();
+    // s.push('c'); // <- cannot borrow `s` as mutable because it is also borrowed as immutable
+
+    // test as_mut_str
+    let mut v: Vec<u8, [u8; 8]> = Vec::new();
+    v.push('a' as u8).unwrap();
+    v.push('b' as u8).unwrap();
+
+    let mut s = String::from_utf8(v).unwrap();
+    let s = s.as_mut_str();
+    s.make_ascii_uppercase();
+    println!("s = {:?}", s);
+
+    // test push_str
+    let mut s: String<[u8; 8]> = String::new();
+    s.push_str("ab");
+    s.push_str("cd");
+    println!("s = {:?}", s);
+    //
     // assert!(s.len() == 3);
     // assert!(s.as_str() == "t 1");
     // write!(&mut s, "t {}", 1).unwrap();
