@@ -3,6 +3,12 @@ extern crate heapless;
 use std::fmt::Write;
 use heapless::{String, Vec};
 
+fn takes_str(s: &str) {}
+///
+/// let s = String::from("Hello");
+///
+/// takes_str(&s);
+///
 fn main() {
     let mut s: String<[u8; 4]> = String::new();
     assert!(s.capacity() == 4);
@@ -12,6 +18,41 @@ fn main() {
     v.push('b' as u8);
 
     let s = String::from_utf8(v).unwrap();
+    // v.push('c' as u8); // v has been moved to s (no copy)
+
+    assert!(s.len() == 2);
+    takes_str(&s);
+
+    println!("{:?}", s);
+
+    let mut v: Vec<u8, [u8; 8]> = Vec::new();
+    v.push(240);
+    v.push(159);
+    v.push(146);
+    v.push(150);
+
+    let s = String::from_utf8(v);
+    println!("s =  {:?}", s);
+
+    let mut v: Vec<u8, [u8; 8]> = Vec::new();
+    v.push(0);
+    v.push(159);
+    v.push(146);
+    v.push(150);
+
+    let s = String::from_utf8(v);
+    println!("s =  {:?}", s);
+    assert!(s.is_err());
+
+    let mut v: Vec<u8, [u8; 8]> = Vec::new();
+    v.push(240);
+    v.push(159);
+    v.push(146);
+    v.push(150);
+
+    let s = unsafe { String::from_utf8_unchecked(v) };
+    println!("s =  {:?}", s);
+    assert!(s.len() == 4);
 
     // assert!(s.len() == 3);
     // assert!(s.as_str() == "t 1");
