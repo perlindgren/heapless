@@ -22,9 +22,6 @@ where
 {
     /// Constructs a new, empty `String` backed by a Vec<u8,[u8;N]>
     ///
-    /// Notice, in comparison to std:String, heapless strings are
-    /// limited to ASCII/utf8 encoding.
-    ///
     /// # Examples
     ///
     /// Basic usage:
@@ -37,9 +34,36 @@ where
         String { vec: Vec::new() }
     }
 
+    /// Constructs a new, empty `String` backed by a Vec<u8,[u8;N]> from an &str.
+    /// Cannot be called from a `static context (not `const fn`).
+    ///
+    /// Current implementation silently truncates the result to the capacity of the String.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// let s: String<[u8; 4]> = String::from("abc");
+    /// assert!(s.len() == 3);
+    ///
+    /// let s: String<[_; 4]> = String::from("abcde");
+    /// assert!(s.len() == 4);
+    /// ```
+    // Todo, Trait implementation?
+    // Return a Vec::Result?
+    //
+    pub fn from(s: &str) -> Self {
+        let mut new = String::new();
+        new.push_str(s);
+        new
+    }
+
     /// Returns the maximum number of elements the String can hold
     ///
     /// # Examples
+    ///
+    /// Basic usage:
     ///
     /// ```
     /// let mut s: String<[u8; 4]> = String::new();
@@ -110,11 +134,7 @@ where
     /// Basic usage:
     ///
     /// ```
-    /// let mut v: Vec<u8, [u8; 8]> = Vec::new();
-    /// v.push('a' as u8).unwrap();
-    /// v.push('b' as u8).unwrap();
-    ///
-    /// let s = String::from_utf8(v).unwrap();
+    /// let s: String<[_; 4]> = String::from("ab");
     /// let b = s.into_bytes();
     /// assert!(b.len() == 2);
     ///
@@ -132,11 +152,7 @@ where
     /// Basic usage:
     ///
     /// ```
-    /// let mut v: Vec<u8, [u8; 8]> = Vec::new();
-    /// v.push('a' as u8).unwrap();
-    /// v.push('b' as u8).unwrap();
-    ///
-    /// let mut s = String::from_utf8(v).unwrap();
+    /// let mut s: String<[_; 4]> = String::from("ab");
     /// assert!(s.as_str() == "ab");
     ///
     /// let s1 = s.as_str();
@@ -155,11 +171,7 @@ where
     /// Basic usage:
     ///
     /// ```
-    /// let mut v: Vec<u8, [u8; 8]> = Vec::new();
-    /// v.push('a' as u8).unwrap();
-    /// v.push('b' as u8).unwrap();
-    ///
-    /// let mut s = String::from_utf8(v).unwrap();
+    /// let mut s: String<[_; 4]> = String::from("ab");
     /// let s = s.as_mut_str();
     /// s.make_ascii_uppercase();
     /// ```
@@ -182,6 +194,11 @@ where
     ///
     /// assert_eq!("foobar", s);
     /// ```
+    //
+    // TODO, should be implemented using `extend_from_slice` on Vec
+    // (Hower, this is not yet implemented in Vec, so we do a hack.)
+    // In the future we will return a Vec::Result
+    #[inline]
     pub fn push_str(&mut self, s: &str) {
         let buffer: &mut [u8] = unsafe { self.vec.buffer.as_mut() };
         let start = self.vec.len;
@@ -274,18 +291,18 @@ where
     // }
 
     ///
-    pub fn from<'a>(&mut self, s: &'a str) -> Result<(), BufferFullError> {
-        match self.vec.len <= s.len() {
-            true => {
-                let buffer: &mut [u8] = unsafe { self.vec.buffer.as_mut() };
-                let len = s.len().min(buffer.len());
-                self.vec.len = len;
-                buffer[0..len].copy_from_slice(&s.as_bytes()[0..len]);
-                Ok(())
-            }
-            _ => Err(BufferFullError),
-        }
-    }
+    // pub fn from<'a>(&mut self, s: &'a str) -> Result<(), BufferFullError> {
+    //     match self.vec.len <= s.len() {
+    //         true => {
+    //             let buffer: &mut [u8] = unsafe { self.vec.buffer.as_mut() };
+    //             let len = s.len().min(buffer.len());
+    //             self.vec.len = len;
+    //             buffer[0..len].copy_from_slice(&s.as_bytes()[0..len]);
+    //             Ok(())
+    //         }
+    //         _ => Err(BufferFullError),
+    //     }
+    // }
 
     ///
     pub fn len(&self) -> usize {

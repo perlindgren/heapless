@@ -7,8 +7,17 @@ fn takes_str(_s: &str) {}
 
 fn main() {
     // test capacity
-    let mut s: String<[u8; 4]> = String::new();
+    let s: String<[u8; 4]> = String::new();
     assert!(s.capacity() == 4);
+
+    // test from
+    let s: String<[u8; 4]> = String::from("abc");
+    assert!(s.len() == 3);
+    println!("s = {:?}", s);
+
+    let s: String<[_; 4]> = String::from("abcde");
+    assert!(s.len() == 4);
+    println!("s = {:?}", s);
 
     // test from_utf8
     let mut v: Vec<u8, [u8; 8]> = Vec::new();
@@ -21,7 +30,7 @@ fn main() {
     assert!(s.len() == 2);
     takes_str(&s);
 
-    println!("{:?}", s);
+    println!("s = {:?}", s);
 
     // test from_utf8
     let mut v: Vec<u8, [u8; 8]> = Vec::new();
@@ -56,32 +65,20 @@ fn main() {
     assert!(s.len() == 4);
 
     // test into_bytes
-    let mut v: Vec<u8, [u8; 8]> = Vec::new();
-    v.push('a' as u8).unwrap();
-    v.push('b' as u8).unwrap();
-
-    let s = String::from_utf8(v).unwrap();
+    let s: String<[_; 4]> = String::from("ab");
     let b = s.into_bytes();
     assert!(b.len() == 2);
 
     assert_eq!(&['a' as u8, 'b' as u8], &b[..]);
 
     // test as_str
-    let mut v: Vec<u8, [u8; 8]> = Vec::new();
-    v.push('a' as u8).unwrap();
-    v.push('b' as u8).unwrap();
-
-    let mut s = String::from_utf8(v).unwrap();
+    let s: String<[_; 4]> = String::from("ab");
     assert!(s.as_str() == "ab");
     let s1 = s.as_str();
     // s.push('c'); // <- cannot borrow `s` as mutable because it is also borrowed as immutable
 
     // test as_mut_str
-    let mut v: Vec<u8, [u8; 8]> = Vec::new();
-    v.push('a' as u8).unwrap();
-    v.push('b' as u8).unwrap();
-
-    let mut s = String::from_utf8(v).unwrap();
+    let mut s: String<[_; 4]> = String::from("ab");
     let s = s.as_mut_str();
     s.make_ascii_uppercase();
     println!("s = {:?}", s);
@@ -91,6 +88,11 @@ fn main() {
     s.push_str("ab");
     s.push_str("cd");
     println!("s = {:?}", s);
+
+    // test from
+    let s: String<[u8; 8]> = String::from("abc");
+    println!("s = {:?}", s);
+
     //
     // assert!(s.len() == 3);
     // assert!(s.as_str() == "t 1");
