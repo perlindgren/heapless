@@ -21,7 +21,7 @@ impl<A> String<A>
 where
     A: Unsize<[u8]>,
 {
-    /// Constructs a new, empty `String` backed by a Vec<u8,[u8;N]>
+    /// Constructs a new, empty `String` backed by a `Vec<u8,[u8;N]>`
     ///
     /// # Examples
     ///
@@ -35,14 +35,10 @@ where
         String { vec: Vec::new() }
     }
 
-    /// Constructs a new, empty `String` backed by a Vec<u8,[u8;N]> from an &str.
+    /// Constructs a new, empty `String` backed by a `Vec<u8,[u8;N]>` from an `&str`.
     /// Cannot be called from a `static context (not `const fn`).
     ///
-    /// Current implementation silently truncates the result to the capacity of the String.
-    ///
     /// # Examples
-    ///
-    /// Panics if `new_len` does not lie on a [`char`] boundary.
     ///
     /// Basic usage:
     ///
@@ -53,7 +49,7 @@ where
     ///
     /// # Panics
     ///
-    /// Panics if capacity of the String would bo exceeded.
+    /// Panics if capacity of the String would be exceeded.
     ///
     /// ```
     /// let s: String<[_; 4]> = String::from("12345"); // <- Would `panic!`
