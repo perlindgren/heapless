@@ -72,7 +72,7 @@ fn main() {
     // test as_str
     let s: String<[_; 4]> = String::from("ab");
     assert!(s.as_str() == "ab");
-    let _s1 = s.as_str();
+    let _s = s.as_str();
     // s.push('c'); // <- cannot borrow `s` as mutable because it is also borrowed as immutable
 
     // test as_mut_str
@@ -83,8 +83,8 @@ fn main() {
 
     // test push_str
     let mut s: String<[u8; 8]> = String::new();
-    s.push_str("ab");
-    s.push_str("cd");
+    s.push_str("ab").unwrap();
+    s.push_str("cd").unwrap();
     println!("s = {:?}", s);
 
     let mut s: String<[u8; 8]> = String::from("foo");

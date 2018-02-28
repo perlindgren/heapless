@@ -36,7 +36,8 @@ where
     }
 
     /// Constructs a new, empty `String` backed by a `Vec<u8,[u8;N]>` from an `&str`.
-    /// Cannot be called from a `static context (not `const fn`).
+    ///
+    /// Cannot be called from a `static` context (not a `const fn`).
     ///
     /// # Examples
     ///
@@ -79,10 +80,10 @@ where
     /// let mut v: Vec<u8, [u8; 8]> = Vec::new();
     /// v.push('a' as u8).unwrap();
     /// v.push('b' as u8).unwrap();
-    /// ```
     ///
     /// let s = String::from_utf8(v).unwrap();
     /// assert!(s.len() == 2);
+    /// ```
     ///
     /// Incorrect bytes:
     ///
@@ -143,8 +144,8 @@ where
     /// let mut s: String<[_; 4]> = String::from("ab");
     /// assert!(s.as_str() == "ab");
     ///
-    /// let s1 = s.as_str();
-    /// s.push('c'); // <- cannot borrow `s` as mutable because it is also borrowed as immutable
+    /// let _s = s.as_str();
+    /// // s.push('c'); // <- cannot borrow `s` as mutable because it is also borrowed as immutable
     /// ```
     #[inline]
     pub fn as_str(&self) -> &str {
@@ -424,7 +425,7 @@ where
     A: Unsize<[u8]>,
 {
     fn write_str(&mut self, s: &str) -> Result<(), fmt::Error> {
-        self.push_str(s);
+        self.push_str(s).unwrap();
         Ok(())
     }
 
