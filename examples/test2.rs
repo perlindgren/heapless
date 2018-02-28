@@ -74,7 +74,7 @@ fn main() {
     // test as_str
     let s: String<[_; 4]> = String::from("ab");
     assert!(s.as_str() == "ab");
-    let s1 = s.as_str();
+    let _s1 = s.as_str();
     // s.push('c'); // <- cannot borrow `s` as mutable because it is also borrowed as immutable
 
     // test as_mut_str
@@ -103,75 +103,30 @@ fn main() {
     let s: String<[u8; 8]> = String::from("hello");
     assert_eq!(&[104, 101, 108, 108, 111], s.as_bytes());
 
-    // test as_bytes
+    // test as_truncate
     let mut s: String<[u8; 8]> = String::from("hello");
     s.truncate(2);
     assert_eq!("he", s);
     assert_eq!(s, "he");
 
-    // assert_eq!("abc123", s); // todo
+    // test pop
+    let mut s: String<[u8; 8]> = String::from("foo");
 
-    //
-    // assert!(s.len() == 3);
-    // assert!(s.as_str() == "t 1");
-    // write!(&mut s, "t {}", 1).unwrap();
+    assert_eq!(s.pop(), Some('o'));
+    assert_eq!(s.pop(), Some('o'));
+    assert_eq!(s.pop(), Some('f'));
+    assert_eq!(s.pop(), None);
 
-    // println!("{:?} capacity {}, length {}", s, s.capacity(), s.len());
+    // test is_empty
+    let mut v: String<[u8; 8]> = String::new();
+    assert!(v.is_empty());
+    let _ = v.push('a');
+    assert!(!v.is_empty());
 
-    // write!(&mut s, "2").unwrap();
-    // println!("{:?} capacity {}, length {}", s, s.capacity(), s.len());
-
-    // s.from_utf8(&v);
-    // println!("from_utf8 s {:?}", s);
-
-    // s.clear();
-    // write!(&mut s, "t {}", 1).unwrap();
-    // println!("written s {:?}", s);
-
-    // s.clear();
-    // println!("cleared s {:?}", s);
-
-    // write!(&mut s, "1").unwrap();
-    // write!(&mut s, "2").unwrap();
-    // write!(&mut s, "3").unwrap();
-
-    // println!("written 3 times s {:?}", s);
-
-    // {
-    //     let ss = s.as_str();
-    //     println!("ss {:?}", ss);
-    // }
-
-    // {
-    //     let ss = unsafe { s.as_mut_str().as_bytes_mut() };
-    //     ss[0 as usize] = 'a' as u8;
-    //     println!("in the inner ss {:?}", ss);
-    //     let sss = &mut ss[0..1];
-    //     sss[0] = 'b' as u8;
-    //     println!("sss {:?}", str::from_utf8(&sss).unwrap());
-    // }
-
-    // println!("has now changed in outer s {:?}", s);
-
-    // s.clear();
-
-    // // s.from("t");
-    // // let _ = s.write_char('e');
-    // // let _ = s.write_str("sting"); // last chars lost
-
-    // // println!("w {:?}", w);
-    // // println!("s {:?}", s);
-    // // println!("s {}", s);
-
-    // // //    let f = format_args!("uotha {}", 1);
-    // // //    write!(fmt::format, "etuho");
-    // // //s = format!("nth");
-
-    // // s.from("Test");
-    // // println!("String {:?}, len {}", s, s.len());
-
-    // // s.from("12345");
-    // // println!("String {:?}, len {}", s, s.len());
-
-    // // println!("ss {}", ss);
+    // test clear
+    let mut s: String<[u8; 8]> = String::from("foo");
+    s.clear();
+    assert!(s.is_empty());
+    assert_eq!(0, s.len());
+    assert_eq!(8, s.capacity());
 }

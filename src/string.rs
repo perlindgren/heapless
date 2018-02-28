@@ -1,11 +1,11 @@
 use core::marker::Unsize;
-use core::{fmt, ops, ptr, slice, str};
+use core::{fmt, ops, str};
 use core::str::Utf8Error;
 
 use {BufferFullError, Vec};
-use core::ops::Deref;
+//use core::ops::Deref;
 
-/// A String, backed by a fixed size array
+/// A String, backed by a fixed size array `heapless::Vec`
 ///
 /// String: https://doc.rust-lang.org/std/string/struct.String.html
 
@@ -273,91 +273,109 @@ where
     /// Basic usage:
     ///
     /// ```
-    /// let mut s = String::from("hello");
+    /// let mut s: String<[u8; 8]> = String::from("hello");
     ///
     /// s.truncate(2);
     ///
     /// assert_eq!("he", s);
     /// ```
-    ///
+    #[inline]
     pub fn truncate(&mut self, new_len: usize) {
-        self.vec.truncate(new_len)
-    }
-
-    ///
-    pub fn pop(&mut self) -> Option<char> {
-        match self.vec.pop() {
-            Some(c) => Some(c as char),
-            None => None,
+        if new_len <= self.len() {
+            assert!(self.is_char_boundary(new_len));
+            self.vec.truncate(new_len)
         }
     }
 
+    /// Removes the last character from the string buffer and returns it.
     ///
+    /// Returns [`None`] if this `String` is empty.
+    ///
+    /// [`None`]: ../../std/option/enum.Option.html#variant.None
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// let mut s = String::from("foo");
+    ///
+    /// assert_eq!(s.pop(), Some('o'));
+    /// assert_eq!(s.pop(), Some('o'));
+    /// assert_eq!(s.pop(), Some('f'));
+    ///
+    /// assert_eq!(s.pop(), None);
+    /// ```
+    pub fn pop(&mut self) -> Option<char> {
+        let ch = self.chars().rev().next()?;
+        let newlen = self.len() - ch.len_utf8();
+        self.vec.len = newlen;
+
+        Some(ch)
+    }
+
+    /// Unimplemented
     pub fn remove(&mut self, _idx: usize) -> char {
         unimplemented!();
     }
 
-    ///
+    /// Unimplemented
     pub fn insert(&mut self, _idx: usize, _ch: char) {
         unimplemented!();
     }
 
-    ///
+    /// Unimplemented
     pub fn insert_str(&mut self, _idx: usize, _string: &str) {
         unimplemented!();
     }
 
-    ///
+    /// Unimplemented
     pub fn as_mut_vec(&mut self) -> &mut Vec<u8, A> {
         &mut self.vec
     }
 
     ///
+    /// Returns `true` if this `String` has a length of zero.
+    ///
+    /// Returns `false` otherwise.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// let mut v = String::new();
+    /// assert!(v.is_empty());
+    ///
+    /// v.push('a');
+    /// assert!(!v.is_empty());
+    /// ```
     pub fn is_empty(&self) -> bool {
         self.vec.len == 0
     }
 
+    /// Truncates this `String`, removing all contents.
     ///
-    // pub fn split_off<B>(&mut self, at: usize) -> String<B>
-    // where
-    //     B: Unsize<[u8]>,
-    // {
-    //     let buffer: &mut [u8] = unsafe { self.vec.buffer.as_mut() };
-    //     if self.vec.len <= at {
-    //         let (mut b1, mut b2) = buffer.split_at_mut(at);
-    //         //self.vec.buffer = UntaggedOption::some(A);
-
-    //         String {
-    //             vec: Vec {
-    //                 _marker: PhantomData,
-    //                 buffer: UntaggedOption::none(),
-    //                 len: b2.len(),
-    //             },
-    //         }
-    //     } else {
-    //         String {
-    //             vec: Vec {
-    //                 _marker: PhantomData,
-    //                 buffer: UntaggedOption::none(),
-    //                 len: 0,
-    //             },
-    //         }
-    //     }
-    // }
-
+    /// While this means the `String` will have a length of zero, it does not
+    /// touch its capacity.
     ///
-    // pub fn from<'a>(&mut self, s: &'a str) -> Result<(), BufferFullError> {
-    //     match self.vec.len <= s.len() {
-    //         true => {
-    //             let buffer: &mut [u8] = unsafe { self.vec.buffer.as_mut() };
-    //             let len = s.len().min(buffer.len());
-    //             self.vec.len = len;
-    //             buffer[0..len].copy_from_slice(&s.as_bytes()[0..len]);
-    //             Ok(())
-    //         }
-    //         _ => Err(BufferFullError),
-    //     }
-    // }
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// let mut s = String::from("foo");
+    ///
+    /// s.clear();
+    ///
+    /// assert!(s.is_empty());
+    /// assert_eq!(0, s.len());
+    /// assert_eq!(3, s.capacity());
+    /// ```
+    #[inline]
+    pub fn clear(&mut self) {
+        self.vec.clear()
+    }
 
     ///
     pub fn len(&self) -> usize {
