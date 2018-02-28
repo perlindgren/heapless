@@ -11,13 +11,11 @@ fn main() {
     assert!(s.capacity() == 4);
 
     // test from
-    let s: String<[u8; 4]> = String::from("abc");
+    let s: String<[u8; 4]> = String::from("123");
     assert!(s.len() == 3);
     println!("s = {:?}", s);
 
-    let s: String<[_; 4]> = String::from("abcde");
-    assert!(s.len() == 4);
-    println!("s = {:?}", s);
+    // let s: String<[_; 4]> = String::from("12345"); // <- Would `panic!`
 
     // test from_utf8
     let mut v: Vec<u8, [u8; 8]> = Vec::new();
@@ -89,6 +87,13 @@ fn main() {
     s.push_str("cd");
     println!("s = {:?}", s);
 
+    let mut s: String<[u8; 8]> = String::from("foo");
+    assert!(s.push_str("bar").is_ok());
+    assert_eq!("foobar", s);
+    println!("s = {:?}", s);
+
+    assert!(s.push_str("tender").is_err());
+
     // test push
     let mut s: String<[u8; 8]> = String::from("abc");
 
@@ -129,4 +134,9 @@ fn main() {
     assert!(s.is_empty());
     assert_eq!(0, s.len());
     assert_eq!(8, s.capacity());
+
+    // test len
+    let a: String<[u8; 8]> = String::from("foo");
+
+    assert_eq!(a.len(), 3);
 }

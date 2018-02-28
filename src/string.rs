@@ -42,21 +42,28 @@ where
     ///
     /// # Examples
     ///
+    /// Panics if `new_len` does not lie on a [`char`] boundary.
+    ///
     /// Basic usage:
     ///
     /// ```
-    /// let s: String<[u8; 4]> = String::from("abc");
+    /// let s: String<[u8; 4]> = String::from("123");
     /// assert!(s.len() == 3);
-    ///
-    /// let s: String<[_; 4]> = String::from("abcde");
-    /// assert!(s.len() == 4);
     /// ```
-    // Todo, Trait implementation?
-    // Return a Vec::Result?
+    ///
+    /// # Panics
+    ///
+    /// Panics if capacity of the String would bo exceeded.
+    ///
+    /// ```
+    /// let s: String<[_; 4]> = String::from("12345"); // <- Would `panic!`
+    /// ```
     //
+    // Todo, Trait implementation?
+    #[inline]
     pub fn from(s: &str) -> Self {
         let mut new = String::new();
-        new.push_str(s);
+        new.push_str(s).unwrap();
         new
     }
 
@@ -93,7 +100,7 @@ where
     /// assert!(String::from_utf8(v).is_err());
     /// ```
     #[inline]
-    pub fn from_utf8(vec: Vec<u8, A>) -> Result<String<A>, Utf8Error> {
+    pub fn from_utf8(vec: Vec<u8, A>) -> Result<(String<A>), Utf8Error> {
         {
             let buffer: &[u8] = unsafe { vec.buffer.as_ref() };
             str::from_utf8(&buffer[0..vec.len])?;
@@ -167,31 +174,37 @@ where
     }
 
     /// Appends a given string slice onto the end of this `String`.
+    /// Returns with a Result<(), BufferFullError>.
     ///
     /// # Examples
     ///
     /// Basic usage:
     ///
     /// ```
-    /// let mut s = String::from("foo");
+    /// let mut s: String<[u8; 8]> = String::from("foo");
     ///
-    /// s.push_str("bar");
+    /// assert!(s.push_str("bar").is_ok());
     ///
     /// assert_eq!("foobar", s);
+    ///
+    /// assert!(s.push_str("tender").is_err());
     /// ```
     //
     // TODO, should be implemented using `extend_from_slice` on Vec
-    // (Hower, this is not yet implemented in Vec, so we do a hack.)
-    // In the future we will return a Vec::Result
+    // (this is not yet implemented in Vec, so we implement it here)
     #[inline]
-    pub fn push_str(&mut self, s: &str) {
+    pub fn push_str(&mut self, s: &str) -> Result<(), BufferFullError> {
         let buffer: &mut [u8] = unsafe { self.vec.buffer.as_mut() };
         let start = self.vec.len;
-        let end = start.saturating_add(s.len());
-        let new_len = end.min(buffer.len());
-        self.vec.len = new_len;
-        buffer[start..self.vec.len]
-            .copy_from_slice(&s.as_bytes()[0..self.vec.len.saturating_sub(start)]);
+        let new_len = start + s.len();
+        if new_len <= buffer.len() {
+            self.vec.len = new_len;
+            buffer[start..self.vec.len]
+                .copy_from_slice(&s.as_bytes()[0..self.vec.len.saturating_sub(start)]);
+            Ok(())
+        } else {
+            Err(BufferFullError)
+        }
     }
 
     /// Returns the maximum number of elements the String can hold
@@ -320,16 +333,19 @@ where
     }
 
     /// Unimplemented
+    #[inline]
     pub fn insert(&mut self, _idx: usize, _ch: char) {
         unimplemented!();
     }
 
     /// Unimplemented
+    #[inline]
     pub fn insert_str(&mut self, _idx: usize, _string: &str) {
         unimplemented!();
     }
 
     /// Unimplemented
+    #[inline]
     pub fn as_mut_vec(&mut self) -> &mut Vec<u8, A> {
         &mut self.vec
     }
@@ -350,6 +366,7 @@ where
     /// v.push('a');
     /// assert!(!v.is_empty());
     /// ```
+    #[inline]
     pub fn is_empty(&self) -> bool {
         self.vec.len == 0
     }
@@ -377,7 +394,17 @@ where
         self.vec.clear()
     }
 
+    /// Returns the length of this `String`, in bytes.
     ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// let a: String<[u8; 8]> = String::from("foo");
+    ///
+    /// assert_eq!(a.len(), 3);
+    /// ```
     pub fn len(&self) -> usize {
         self.vec.len
     }
