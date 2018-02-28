@@ -1,8 +1,9 @@
 use core::marker::Unsize;
-use core::{fmt, ops, str};
+use core::{fmt, ops, ptr, slice, str};
 use core::str::Utf8Error;
 
 use {BufferFullError, Vec};
+use core::ops::Deref;
 
 /// A String, backed by a fixed size array
 ///
@@ -234,16 +235,50 @@ where
         self.vec.push(c as u8)
     }
 
+    /// Returns a byte slice of this `String`'s contents.
     ///
+    /// The inverse of this method is [`from_utf8`].
+    ///
+    /// [`from_utf8`]: #method.from_utf8
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// let s: String<[u8; 8]> = String::from("hello");
+    ///
+    /// assert_eq!(&[104, 101, 108, 108, 111], s.as_bytes());
+    #[inline]
     pub fn as_bytes(&self) -> &[u8] {
-        unsafe { self.vec.buffer.as_ref() }
+        &self.vec
     }
 
+    /// Shortens this `String` to the specified length.
     ///
-    pub fn as_bytes_mut(&mut self) -> &mut [u8] {
-        unsafe { self.vec.buffer.as_mut() }
-    }
-
+    /// If `new_len` is greater than the string's current length, this has no
+    /// effect.
+    ///
+    /// Note that this method has no effect on the allocated capacity
+    /// of the string
+    ///
+    /// # Panics
+    ///
+    /// Panics if `new_len` does not lie on a [`char`] boundary.
+    ///
+    /// [`char`]: ../../std/primitive.char.html
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// let mut s = String::from("hello");
+    ///
+    /// s.truncate(2);
+    ///
+    /// assert_eq!("he", s);
+    /// ```
     ///
     pub fn truncate(&mut self, new_len: usize) {
         self.vec.truncate(new_len)
@@ -386,7 +421,40 @@ where
     fn eq(&self, rhs: &String<B>) -> bool {
         PartialEq::eq(&**self, &**rhs)
     }
+
+    fn ne(&self, rhs: &String<B>) -> bool {
+        PartialEq::ne(&**self, &**rhs)
+    }
 }
+
+macro_rules! impl_eq {
+    ($lhs:ty, $rhs: ty) => {
+
+        impl<'a, 'b, A> PartialEq<$rhs> for $lhs
+        where
+            A: Unsize<[u8]>,
+        {
+            #[inline]
+            fn eq(&self, other: &$rhs) -> bool { PartialEq::eq(&self[..], &other[..]) }
+            #[inline]
+            fn ne(&self, other: &$rhs) -> bool { PartialEq::ne(&self[..], &other[..]) }
+        }
+
+        impl<'a, 'b, A> PartialEq<$lhs> for $rhs
+        where
+            A: Unsize<[u8]>,
+        {
+            #[inline]
+            fn eq(&self, other: &$lhs) -> bool { PartialEq::eq(&self[..], &other[..]) }
+            #[inline]
+            fn ne(&self, other: &$lhs) -> bool { PartialEq::ne(&self[..], &other[..]) }
+        }
+
+    }
+}
+
+impl_eq! { String<A>, str }
+impl_eq! { String<A>, &'a str }
 
 impl<A> Eq for String<A>
 where

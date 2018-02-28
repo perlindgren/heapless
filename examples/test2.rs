@@ -98,6 +98,17 @@ fn main() {
 
     assert!("abc123" == s.as_str());
     println!("s = {:?}", s);
+
+    // test as_bytes
+    let s: String<[u8; 8]> = String::from("hello");
+    assert_eq!(&[104, 101, 108, 108, 111], s.as_bytes());
+
+    // test as_bytes
+    let mut s: String<[u8; 8]> = String::from("hello");
+    s.truncate(2);
+    assert_eq!("he", s);
+    assert_eq!(s, "he");
+
     // assert_eq!("abc123", s); // todo
 
     //
