@@ -76,6 +76,8 @@ where
     ///
     /// # Examples
     ///
+    /// Basic usage:
+    ///
     /// ```
     /// let mut v: Vec<u8, [u8; 8]> = Vec::new();
     /// v.push('a' as u8).unwrap();
@@ -196,8 +198,9 @@ where
         let new_len = start + s.len();
         if new_len <= buffer.len() {
             self.vec.len = new_len;
-            buffer[start..self.vec.len]
-                .copy_from_slice(&s.as_bytes()[0..self.vec.len.saturating_sub(start)]);
+            buffer[start..self.vec.len].copy_from_slice(
+                &s.as_bytes()[0..self.vec.len.saturating_sub(start)],
+            );
             Ok(())
         } else {
             Err(BufferFullError)
@@ -502,4 +505,165 @@ impl<A> Eq for String<A>
 where
     A: Unsize<[u8]>,
 {
+}
+
+#[test]
+fn empty() {
+    let s: String<[u8; 4]> = String::new();
+    assert!(s.capacity() == 4);
+    assert_eq!(s, "");
+    assert_eq!(s.len(), 0);
+    assert_ne!(s.len(), 4);
+}
+
+#[test]
+fn from() {
+    let s: String<[u8; 4]> = String::from("123");
+    assert!(s.len() == 3);
+    assert_eq!(s, "123");
+}
+
+#[test]
+fn from_utf8() {
+    let mut v: Vec<u8, [u8; 8]> = Vec::new();
+    v.push('a' as u8).unwrap();
+    v.push('b' as u8).unwrap();
+
+    let s = String::from_utf8(v).unwrap();
+    assert_eq!(s, "ab");
+}
+
+#[test]
+fn from_utf8_uenc() {
+    let mut v: Vec<u8, [u8; 8]> = Vec::new();
+    v.push(240).unwrap();
+    v.push(159).unwrap();
+    v.push(146).unwrap();
+    v.push(150).unwrap();
+
+    assert!(String::from_utf8(v).is_ok());
+}
+
+#[test]
+fn from_utf8_uenc_err() {
+    let mut v: Vec<u8, [u8; 8]> = Vec::new();
+    v.push(0).unwrap();
+    v.push(159).unwrap();
+    v.push(146).unwrap();
+    v.push(150).unwrap();
+
+    assert!(String::from_utf8(v).is_err());
+}
+
+#[test]
+fn from_utf8_unchecked() {
+    let mut v: Vec<u8, [u8; 8]> = Vec::new();
+    v.push(0).unwrap();
+    v.push(159).unwrap();
+    v.push(146).unwrap();
+    v.push(150).unwrap();
+
+    let s = unsafe { String::from_utf8_unchecked(v) };
+}
+
+#[test]
+fn into_bytes() {
+    let s: String<[_; 4]> = String::from("ab");
+    let b: Vec<u8, [u8; 4]> = s.into_bytes();
+    assert_eq!(b.len(), 2);
+    assert_eq!(&['a' as u8, 'b' as u8], &b[..]);
+}
+
+#[test]
+fn as_str() {
+    let s: String<[_; 4]> = String::from("ab");
+
+    assert_eq!(s.as_str(), "ab");
+    // should be moved to fail test
+    //    let _s = s.as_str();
+    // s.push('c'); // <- cannot borrow `s` as mutable because it is also borrowed as immutable
+}
+
+#[test]
+fn as_mut_str() {
+    let mut s: String<[_; 4]> = String::from("ab");
+    let s = s.as_mut_str();
+    s.make_ascii_uppercase();
+    assert_eq!(s, "AB");
+}
+
+#[test]
+fn push_str() {
+    let mut s: String<[u8; 8]> = String::from("foo");
+    assert!(s.push_str("bar").is_ok());
+    assert_eq!("foobar", s);
+    assert!(s.push_str("tender").is_err());
+    assert_eq!("foobar", s);
+}
+
+#[test]
+fn push() {
+    let mut s: String<[u8; 6]> = String::from("abc");
+    s.push('1').is_ok();
+    s.push('2').is_ok();
+    s.push('3').is_ok();
+    s.push('4').is_err();
+    assert!("abc123" == s.as_str());
+}
+
+#[test]
+fn as_bytes() {
+    let s: String<[u8; 8]> = String::from("hello");
+    assert_eq!(&[104, 101, 108, 108, 111], s.as_bytes());
+}
+
+#[test]
+fn truncate() {
+    let mut s: String<[u8; 8]> = String::from("hello");
+    s.truncate(6);
+    assert_eq!(s.len(), 5);
+    s.truncate(2);
+    assert_eq!(s.len(), 2);
+    assert_eq!("he", s);
+    assert_eq!(s, "he");
+}
+
+#[test]
+fn pop() {
+    let mut s: String<[u8; 8]> = String::from("foo");
+    assert_eq!(s.pop(), Some('o'));
+    assert_eq!(s.pop(), Some('o'));
+    assert_eq!(s.pop(), Some('f'));
+    assert_eq!(s.pop(), None);
+}
+
+#[test]
+fn pop_uenc() {
+    let mut s: String<[u8; 8]> = String::from("é");
+    assert_eq!(s.len(), 3);
+    match s.pop() {
+        Some(c) => {
+            assert_eq!(s.len(), 1);
+            assert_eq!(c, '\u{0301}'); // accute accent of e
+            ()
+        }
+        None => assert!(false),
+    };
+}
+
+#[test]
+fn is_empty() {
+    let mut v: String<[u8; 8]> = String::new();
+    assert!(v.is_empty());
+    let _ = v.push('a');
+    assert!(!v.is_empty());
+}
+
+#[test]
+fn clear() {
+    let mut s: String<[u8; 8]> = String::from("foo");
+    s.clear();
+    assert!(s.is_empty());
+    assert_eq!(0, s.len());
+    assert_eq!(8, s.capacity());
 }

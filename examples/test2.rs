@@ -9,6 +9,7 @@ fn main() {
     // test capacity
     let s: String<[u8; 4]> = String::new();
     assert!(s.capacity() == 4);
+    println!("empty = {:?}", s);
 
     // test from
     let s: String<[u8; 4]> = String::from("123");
@@ -70,7 +71,7 @@ fn main() {
     assert_eq!(&['a' as u8, 'b' as u8], &b[..]);
 
     // test as_str
-    let s: String<[_; 4]> = String::from("ab");
+    let mut s: String<[_; 4]> = String::from("ab");
     assert!(s.as_str() == "ab");
     let _s = s.as_str();
     // s.push('c'); // <- cannot borrow `s` as mutable because it is also borrowed as immutable
