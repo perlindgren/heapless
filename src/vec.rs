@@ -1,148 +1,40 @@
 use core::{fmt, hash, iter::FromIterator, mem::MaybeUninit, ops, ptr, slice};
 
-// use generic_array::{ArrayLength, GenericArray};
 use hash32;
 
-/// `const-fn` version of [`Vec`](../struct.Vec.html)
+/// A fixed capacity [`Vec`](https://doc.rust-lang.org/std/vec/struct.Vec.html)
+///
+/// # Examples
+///
+/// ```
+/// use heapless::Vec;
+///
+///
+/// // A vector with a fixed capacity of 8 elements allocated on the stack
+/// let mut vec = Vec::<_, 8>::new();
+/// vec.push(1);
+/// vec.push(2);
+///
+/// assert_eq!(vec.len(), 2);
+/// assert_eq!(vec[0], 1);
+///
+/// assert_eq!(vec.pop(), Some(2));
+/// assert_eq!(vec.len(), 1);
+///
+/// vec[0] = 7;
+/// assert_eq!(vec[0], 7);
+///
+/// vec.extend([1, 2, 3].iter().cloned());
+///
+/// for x in &vec {
+///     println!("{}", x);
+/// }
+/// assert_eq!(*vec, [7, 1, 2, 3]);
+/// ```
 pub struct Vec<T, const N: usize> {
     buffer: MaybeUninit<[T; N]>,
     len: usize,
 }
-
-// impl<T, const N: usize> Vec<T, N> {
-// /// `Vec` `const` constructor; wrap the returned value in [`Vec`](../struct.Vec.html)
-// pub const fn new() -> Self {
-//     Self {
-//         buffer: MaybeUninit::uninit(),
-//         len: 0,
-//     }
-// }
-// }
-
-// I think this part will eventially go away, let's see...
-
-impl<T, const N: usize> Vec<T, N>
-// where
-//     T: Sized, // not sure we need this
-{
-    pub(crate) fn as_slice(&self) -> &[T] {
-        // NOTE(unsafe) avoid bound checks in the slicing operation
-        // &buffer[..self.len]
-        unsafe { slice::from_raw_parts(self.buffer.as_ptr() as *const T, self.len) }
-    }
-
-    pub(crate) fn as_mut_slice(&mut self) -> &mut [T] {
-        // NOTE(unsafe) avoid bound checks in the slicing operation
-        // &mut buffer[..len]
-        unsafe { slice::from_raw_parts_mut(self.buffer.as_mut_ptr() as *mut T, self.len) }
-    }
-
-    // pub(crate) fn capacity(&self) -> usize {
-    //     N
-    // }
-
-    // pub(crate) fn clear(&mut self) {
-    //     self.truncate(0);
-    // }
-
-    pub(crate) fn clone(&self) -> Self
-    where
-        T: Clone,
-    {
-        let mut new = Self::new();
-        new.extend_from_slice(self.as_slice()).unwrap();
-        new
-    }
-
-    pub(crate) fn extend<I>(&mut self, iter: I)
-    where
-        I: IntoIterator<Item = T>,
-    {
-        for elem in iter {
-            self.push(elem).ok().unwrap()
-        }
-    }
-
-    // pub(crate) fn is_full(&self) -> bool {
-    //     self.len == self.capacity()
-    // }
-
-    pub(crate) unsafe fn pop_unchecked(&mut self) -> T {
-        debug_assert!(!self.as_slice().is_empty());
-
-        self.len -= 1;
-        (self.buffer.as_ptr() as *const T).add(self.len).read()
-    }
-
-    pub(crate) unsafe fn push_unchecked(&mut self, item: T) {
-        // NOTE(ptr::write) the memory slot that we are about to write to is uninitialized. We
-        // use `ptr::write` to avoid running `T`'s destructor on the uninitialized memory
-        (self.buffer.as_mut_ptr() as *mut T)
-            .add(self.len)
-            .write(item);
-
-        self.len += 1;
-    }
-
-    unsafe fn swap_remove_unchecked(&mut self, index: usize) -> T {
-        let length = self.len;
-        debug_assert!(index < length);
-        ptr::swap(
-            self.as_mut_slice().get_unchecked_mut(index),
-            self.as_mut_slice().get_unchecked_mut(length - 1),
-        );
-        self.pop_unchecked()
-    }
-
-    // pub(crate) fn swap_remove(&mut self, index: usize) -> T {
-    //     assert!(index < self.len);
-    //     unsafe { self.swap_remove_unchecked(index) }
-    // }
-
-    // pub(crate) fn truncate(&mut self, len: usize) {
-    //     unsafe {
-    //         // drop any extra elements
-    //         while len < self.len {
-    //             // decrement len before the drop_in_place(), so a panic on Drop
-    //             // doesn't re-drop the just-failed value.
-    //             self.len -= 1;
-    //             let len = self.len;
-    //             ptr::drop_in_place(self.as_mut_slice().get_unchecked_mut(len));
-    //         }
-    //     }
-    // }
-}
-
-// /// A fixed capacity [`Vec`](https://doc.rust-lang.org/std/vec/struct.Vec.html)
-// ///
-// /// # Examples
-// ///
-// /// ```
-// /// use heapless::Vec;
-// /// use heapless::consts::*;
-// ///
-// /// // A vector with a fixed capacity of 8 elements allocated on the stack
-// /// let mut vec = Vec::<_, U8>::new();
-// /// vec.push(1);
-// /// vec.push(2);
-// ///
-// /// assert_eq!(vec.len(), 2);
-// /// assert_eq!(vec[0], 1);
-// ///
-// /// assert_eq!(vec.pop(), Some(2));
-// /// assert_eq!(vec.len(), 1);
-// ///
-// /// vec[0] = 7;
-// /// assert_eq!(vec[0], 7);
-// ///
-// /// vec.extend([1, 2, 3].iter().cloned());
-// ///
-// /// for x in &vec {
-// ///     println!("{}", x);
-// /// }
-// /// assert_eq!(vec, [7, 1, 2, 3]);
-// /// ```
-// ///
 
 // PER: Not sure transparent will be needed any longer
 
@@ -188,6 +80,51 @@ impl<T, const N: usize> Vec<T, N>
         }
     }
 
+    /// Clones a vec into a new vec
+    pub(crate) fn clone(&self) -> Self
+    where
+        T: Clone,
+    {
+        let mut new = Self::new();
+        new.extend_from_slice(self.as_slice()).unwrap();
+        new
+    }
+
+    /// Extracts a slice containing the entire vector.
+    ///
+    /// Equivalent to `&s[..]`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use heapless::Vec;
+    /// let buffer: Vec<u8, 5> = Vec::from_slice(&[1, 2, 3, 5, 8]).unwrap();
+    /// assert_eq!(buffer.as_slice(), &[1, 2, 3, 5, 8]);
+    /// ```
+    pub fn as_slice(&self) -> &[T] {
+        // NOTE(unsafe) avoid bound checks in the slicing operation
+        // &buffer[..self.len]
+        unsafe { slice::from_raw_parts(self.buffer.as_ptr() as *const T, self.len) }
+    }
+
+    /// Extracts a mutable slice containing the entire vector.
+    ///
+    /// Equivalent to `&s[..]`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use heapless::Vec;
+    /// let mut buffer: Vec<u8, 5> = Vec::from_slice(&[1, 2, 3, 5, 8]).unwrap();
+    /// buffer[0] = 9;
+    /// assert_eq!(buffer.as_slice(), &[9, 2, 3, 5, 8]);
+    /// ```
+    pub(crate) fn as_mut_slice(&mut self) -> &mut [T] {
+        // NOTE(unsafe) avoid bound checks in the slicing operation
+        // &mut buffer[..self.len]
+        unsafe { slice::from_raw_parts_mut(self.buffer.as_mut_ptr() as *mut T, self.len) }
+    }
+
     /// Constructs a new vector with a fixed capacity of `N` and fills it
     /// with the provided slice.
     ///
@@ -197,7 +134,7 @@ impl<T, const N: usize> Vec<T, N>
     /// use heapless::Vec;
     ///
     /// let mut v: Vec<u8, 16> = Vec::new();
-    // /// v.extend_from_slice(&[1, 2, 3]).unwrap();
+    /// v.extend_from_slice(&[1, 2, 3]).unwrap();
     /// ```
     #[inline]
     pub fn from_slice(other: &[T]) -> Result<Self, ()>
@@ -209,7 +146,7 @@ impl<T, const N: usize> Vec<T, N>
         Ok(v)
     }
 
-    /// Returns the maximum number of elements the vector can hold
+    /// Returns the maximum number of elements the vector can hold.
     pub const fn capacity(&self) -> usize {
         N
     }
@@ -217,6 +154,18 @@ impl<T, const N: usize> Vec<T, N>
     /// Clears the vector, removing all values.
     pub fn clear(&mut self) {
         self.truncate(0);
+    }
+
+    /// Extends the vec from an iterator.
+    ///
+    /// Panics if the vec cannot hold all elements of the iterator.
+    pub fn extend<I>(&mut self, iter: I)
+    where
+        I: IntoIterator<Item = T>,
+    {
+        for elem in iter {
+            self.push(elem).ok().unwrap()
+        }
     }
 
     /// Clones and appends all elements in a slice to the `Vec`.
@@ -232,9 +181,8 @@ impl<T, const N: usize> Vec<T, N>
     /// let mut vec = Vec::<u8, 8>::new();
     /// vec.push(1).unwrap();
     /// vec.extend_from_slice(&[2, 3, 4]).unwrap();
-    /// //assert_eq!(vec, [1, 2, 3, 4]);
+    /// assert_eq!(*vec, [1, 2, 3, 4]);
     /// ```
-
     pub fn extend_from_slice(&mut self, other: &[T]) -> Result<(), ()>
     where
         T: Clone,
@@ -252,7 +200,7 @@ impl<T, const N: usize> Vec<T, N>
         }
     }
 
-    /// Removes the last element from a vector and return it, or `None` if it's empty
+    /// Removes the last element from a vector and returns it, or `None` if it's empty
     pub fn pop(&mut self) -> Option<T> {
         if self.len != 0 {
             Some(unsafe { self.pop_unchecked() })
@@ -271,6 +219,30 @@ impl<T, const N: usize> Vec<T, N>
         } else {
             Err(item)
         }
+    }
+
+    /// Removes the last element from a vector and returns it
+    ///
+    /// Safety: This assumes the vec to have at least one element.
+    pub(crate) unsafe fn pop_unchecked(&mut self) -> T {
+        debug_assert!(!self.as_slice().is_empty());
+
+        self.len -= 1;
+        (self.buffer.as_ptr() as *const T).add(self.len).read()
+    }
+
+    /// Appends an `item` to the back of the collection
+    ///
+    /// Safety: This assumes the vec is not full.
+    pub unsafe fn push_unchecked(&mut self, item: T) {
+        // NOTE(ptr::write) the memory slot that we are about to write to is uninitialized. We
+        // use `ptr::write` to avoid running `T`'s destructor on the uninitialized memory
+        debug_assert!(!self.is_full());
+        (self.buffer.as_mut_ptr() as *mut T)
+            .add(self.len)
+            .write(item);
+
+        self.len += 1;
     }
 
     /// Shortens the vector, keeping the first `len` elements and dropping the rest.
@@ -448,24 +420,58 @@ impl<T, const N: usize> Vec<T, N>
     /// v.push("qux").unwrap();
     ///
     /// assert_eq!(v.swap_remove(1), "bar");
-    // / assert_eq!(&*v, ["foo", "qux", "baz"]);
-    // /
+    /// assert_eq!(&*v, ["foo", "qux", "baz"]);
+    ///
     /// assert_eq!(v.swap_remove(0), "foo");
-    // / assert_eq!(&*v, ["baz", "qux"]);
+    /// assert_eq!(&*v, ["baz", "qux"]);
     /// ```
-
     pub fn swap_remove(&mut self, index: usize) -> T {
         assert!(index < self.len);
         unsafe { self.swap_remove_unchecked(index) }
     }
 
-    //     pub(crate) unsafe fn swap_remove_unchecked(&mut self, index: usize) -> T {
-    //         self.0.swap_remove_unchecked(index)
-    //     }
+    /// Removes an element from the vector and returns it.
+    ///
+    /// The removed element is replaced by the last element of the vector.
+    ///
+    /// This does not preserve ordering, but is O(1).
+    ///
+    /// # Safety
+    ///
+    ///  Assumes `index` within bounds.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use heapless::Vec;
+    ///
+    /// let mut v: Vec<_, 8> = Vec::new();
+    /// v.push("foo").unwrap();
+    /// v.push("bar").unwrap();
+    /// v.push("baz").unwrap();
+    /// v.push("qux").unwrap();
+    ///
+    /// assert_eq!(unsafe { v.swap_remove_unchecked(1) }, "bar");
+    /// assert_eq!(&*v, ["foo", "qux", "baz"]);
+    ///
+    /// assert_eq!(unsafe { v.swap_remove_unchecked(0) }, "foo");
+    /// assert_eq!(&*v, ["baz", "qux"]);
+    /// ```
+    pub unsafe fn swap_remove_unchecked(&mut self, index: usize) -> T {
+        let length = self.len();
+        debug_assert!(index < length);
+        ptr::swap(
+            self.as_mut_slice().get_unchecked_mut(index),
+            self.as_mut_slice().get_unchecked_mut(length - 1),
+        );
+        self.pop_unchecked()
+    }
 
-    //     pub(crate) fn is_full(&self) -> bool {
-    //         self.0.is_full()
-    //     }
+    /// Returns true if the vec is full
+    #[inline]
+    pub fn is_full(&self) -> bool {
+        self.len == self.capacity()
+    }
 
     /// Returns `true` if `needle` is a prefix of the Vec.
     ///
@@ -513,10 +519,6 @@ impl<T, const N: usize> Vec<T, N>
         v >= n && needle == &self[v - n..]
     }
 }
-
-// impl<T, const N: usize> Vec<T, N>
-// where
-//     T: Sized,
 
 // Trait implementations
 
@@ -602,15 +604,14 @@ impl<'a, T, const N: usize> IntoIterator for &'a Vec<T, N> {
     }
 }
 
-// PER: looks strange, why iter_mut?
-// impl<'a, T, const N: usize> IntoIterator for &'a mut Vec<T, N> {
-//     type Item = &'a mut T;
-//     type IntoIter = slice::IterMut<'a, T>;
+impl<'a, T, const N: usize> IntoIterator for &'a mut Vec<T, N> {
+    type Item = &'a mut T;
+    type IntoIter = slice::IterMut<'a, T>;
 
-//     fn into_iter(self) -> Self::IntoIter {
-//         self.iter_mut()
-//     }
-// }
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter_mut()
+    }
+}
 
 impl<T, const N: usize> FromIterator<T> for Vec<T, N> {
     fn from_iter<I>(iter: I) -> Self
@@ -691,44 +692,59 @@ where
     }
 }
 
-// macro_rules! eq {
-//     ($Lhs:ty, $Rhs:ty) => {
-//         impl<'a, 'b, A, B, N> PartialEq<$Rhs> for $Lhs
-//         where
-//             A: PartialEq<B>,
-//             N: ArrayLength<A>,
-//         {
-//             fn eq(&self, other: &$Rhs) -> bool {
-//                 <[A]>::eq(self, &other[..])
-//             }
-//         }
-//     };
-// }
+// Vec<A, N> == [B]
+impl<A, B, const N: usize> PartialEq<[B]> for Vec<A, N>
+where
+    A: PartialEq<B>,
+{
+    fn eq(&self, other: &[B]) -> bool {
+        <[A]>::eq(self, &other[..])
+    }
+}
 
-// eq!(Vec<A, N>, [B]);
-// eq!(Vec<A, N>, &'a [B]);
-// eq!(Vec<A, N>, &'a mut [B]);
+// Vec<A, N> == &[B]
+impl<A, B, const N: usize> PartialEq<&[B]> for Vec<A, N>
+where
+    A: PartialEq<B>,
+{
+    fn eq(&self, other: &&[B]) -> bool {
+        <[A]>::eq(self, &other[..])
+    }
+}
 
-// macro_rules! array {
-//     ($($N:expr),+) => {
-//         $(
-//             eq!(Vec<A, N>, [B; $N]);
-//             eq!(Vec<A, N>, &'a [B; $N]);
-//         )+
-//     }
-// }
+// Vec<A, N> == &mut [B]
+impl<A, B, const N: usize> PartialEq<&mut [B]> for Vec<A, N>
+where
+    A: PartialEq<B>,
+{
+    fn eq(&self, other: &&mut [B]) -> bool {
+        <[A]>::eq(self, &other[..])
+    }
+}
 
-// array!(
-//     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
-//     26, 27, 28, 29, 30, 31, 32
-// );
+// Vec<A, N> == [B; N]
+impl<A, B, const N: usize> PartialEq<[B; N]> for Vec<A, N>
+where
+    A: PartialEq<B>,
+{
+    fn eq(&self, other: &[B; N]) -> bool {
+        <[A]>::eq(self, &other[..])
+    }
+}
 
-// impl<T, N> Eq for Vec<T, N>
-// where
-//     N: ArrayLength<T>,
-//     T: Eq,
-// {
-// }
+// Vec<A, N> == &[B; M]
+// Equality does not require equal capacity
+impl<A, B, const N: usize, const M: usize> PartialEq<&[B; M]> for Vec<A, N>
+where
+    A: PartialEq<B>,
+{
+    fn eq(&self, other: &&[B; M]) -> bool {
+        <[A]>::eq(self, &other[..])
+    }
+}
+
+// Implements Eq if underlying data is Eq
+impl<T, const N: usize> Eq for Vec<T, N> where T: Eq {}
 
 impl<T, const N: usize> ops::Deref for Vec<T, N> {
     type Target = [T];
