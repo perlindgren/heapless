@@ -80,7 +80,7 @@
 // pub use indexmap::{Bucket, FnvIndexMap, IndexMap, Pos};
 // pub use indexset::{FnvIndexSet, IndexSet};
 // pub use linear_map::LinearMap;
-// pub use string::String;
+pub use string::String;
 pub use vec::Vec;
 // pub use histbuf::HistoryBuffer;
 
@@ -88,7 +88,7 @@ pub use vec::Vec;
 // mod indexmap;
 // mod indexset;
 // mod linear_map;
-// mod string;
+mod string;
 mod vec;
 // mod histbuf;
 
