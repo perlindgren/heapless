@@ -106,7 +106,7 @@ mod vec;
 // #[cfg(has_atomics)]
 // pub mod spsc;
 
-// #[cfg(feature = "ufmt-impl")]
-// mod ufmt;
+#[cfg(feature = "ufmt-impl")]
+mod ufmt;
 
 // mod sealed;
