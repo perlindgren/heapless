@@ -153,7 +153,6 @@ impl<const N: usize> String<N> {
     ///
     /// ```
     /// use heapless::String;
-    /// use heapless::consts::*;
     ///
     /// let mut s: String<4> = String::from("ab");
     /// let s = s.as_mut_str();
@@ -519,6 +518,30 @@ impl<const N: usize> PartialEq<&str> for String<N> {
     }
 }
 
+// str == String<N>
+impl<const N: usize> PartialEq<String<N>> for str {
+    #[inline]
+    fn eq(&self, other: &String<N>) -> bool {
+        str::eq(&self[..], &other[..])
+    }
+    #[inline]
+    fn ne(&self, other: &String<N>) -> bool {
+        str::ne(&self[..], &other[..])
+    }
+}
+
+// &'str == String<N>
+impl<const N: usize> PartialEq<String<N>> for &str {
+    #[inline]
+    fn eq(&self, other: &String<N>) -> bool {
+        str::eq(&self[..], &other[..])
+    }
+    #[inline]
+    fn ne(&self, other: &String<N>) -> bool {
+        str::ne(&self[..], &other[..])
+    }
+}
+
 impl<const N: usize> Eq for String<N> {}
 
 // impl<const N: usize, D: core::fmt::Display> From<D> for String<N> {
@@ -706,10 +729,10 @@ mod tests {
     fn push_str() {
         let mut s: String<8> = String::from("foo");
         assert!(s.push_str("bar").is_ok());
-        // assert_eq!("foobar", s);
+        assert_eq!("foobar", s);
         assert_eq!(s, "foobar");
         assert!(s.push_str("tender").is_err());
-        // assert_eq!("foobar", s);
+        assert_eq!("foobar", s);
         assert_eq!(s, "foobar");
     }
 
@@ -736,7 +759,7 @@ mod tests {
         assert_eq!(s.len(), 5);
         s.truncate(2);
         assert_eq!(s.len(), 2);
-        // assert_eq!("he", s);
+        assert_eq!("he", s);
         assert_eq!(s, "he");
     }
 
