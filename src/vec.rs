@@ -63,9 +63,9 @@ impl<T, const N: usize> Vec<T, N>
         }
     }
 
-    pub(crate) fn is_full(&self) -> bool {
-        self.len == self.capacity()
-    }
+    // pub(crate) fn is_full(&self) -> bool {
+    //     self.len == self.capacity()
+    // }
 
     pub(crate) unsafe fn pop_unchecked(&mut self) -> T {
         debug_assert!(!self.as_slice().is_empty());
@@ -775,7 +775,7 @@ impl<T, const N: usize> AsMut<[T]> for Vec<T, N> {
 #[cfg(test)]
 mod tests {
     use crate::Vec;
-    use as_slice::AsSlice;
+    // use as_slice::AsSlice;
     use core::fmt::Write;
 
     #[test]
