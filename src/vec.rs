@@ -367,7 +367,7 @@ impl<T, const N: usize> Vec<T, N>
     /// #     ) -> i32;
     /// # }
     /// # impl StreamWrapper {
-    /// pub fn get_dictionary(&self) -> Option<Vec<u8, U32768>> {
+    /// pub fn get_dictionary(&self) -> Option<Vec<u8, 32768>> {
     ///     // Per the FFI method's docs, "32768 bytes is always enough".
     ///     let mut dict = Vec::new();
     ///     let mut dict_length = 0;
@@ -393,26 +393,28 @@ impl<T, const N: usize> Vec<T, N>
     /// While the following example is sound, there is a memory leak since
     /// the inner vectors were not freed prior to the `set_len` call:
     ///
+    /// PER: TODO seems we are missing something here
     /// ```
     /// use core::iter::FromIterator;
     /// use heapless::Vec;
-    /// use heapless::consts::*;
     ///
-    /// let mut vec = Vec::<Vec<u8, U3>, U3>::from_iter(
-    ///     [
-    ///         Vec::from_iter([1, 0, 0].iter().cloned()),
-    ///         Vec::from_iter([0, 1, 0].iter().cloned()),
-    ///         Vec::from_iter([0, 0, 1].iter().cloned()),
-    ///     ]
-    ///     .iter()
-    ///     .cloned()
-    /// );
-    /// // SAFETY:
-    /// // 1. `old_len..0` is empty so no elements need to be initialized.
-    /// // 2. `0 <= capacity` always holds whatever `capacity` is.
-    /// unsafe {
-    ///     vec.set_len(0);
-    /// }
+    /// // let mut vec = Vec::from_iter([1, 0, 0].iter().cloned());
+    ///         
+    // / let mut vec = Vec::<Vec<u8, 3>, 3>::from_iter(
+    // /     [
+    // /         Vec::from_iter([1, 0, 0].iter().cloned()),
+    // /         Vec::from_iter([0, 1, 0].iter().cloned()),
+    // /         Vec::from_iter([0, 0, 1].iter().cloned()),
+    // /     ]
+    // /     .iter()
+    // /     .cloned()
+    // / );
+    // / // SAFETY:
+    // / // 1. `old_len..0` is empty so no elements need to be initialized.
+    // / // 2. `0 <= capacity` always holds whatever `capacity` is.
+    // / unsafe {
+    // /     vec.set_len(0);
+    // / }
     /// ```
     ///
     /// Normally, here, one would use [`clear`] instead to correctly drop
@@ -497,7 +499,7 @@ impl<T, const N: usize> Vec<T, N>
     /// ```
     /// use heapless::Vec;
     ///
-    /// let v: Vec<_, U8> = Vec::from_slice(b"abc").unwrap();
+    /// let v: Vec<_, 8> = Vec::from_slice(b"abc").unwrap();
     /// assert_eq!(v.ends_with(b""), true);
     /// assert_eq!(v.ends_with(b"ab"), false);
     /// assert_eq!(v.ends_with(b"bc"), true);
