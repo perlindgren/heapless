@@ -68,13 +68,14 @@
 
 // experimental usage of const generics, requires nightly 2020-08-18 (or newer)
 #![feature(min_const_generics)]
+#![feature(const_fn)]
 #![cfg_attr(not(test), no_std)]
 #![deny(missing_docs)]
 #![deny(rust_2018_compatibility)]
 #![deny(rust_2018_idioms)]
 // #![deny(warnings)]
 
-// pub use binary_heap::BinaryHeap;
+pub use binary_heap::BinaryHeap;
 // pub use generic_array::typenum::{consts, PowerOfTwo};
 // pub use generic_array::ArrayLength;
 // pub use indexmap::{Bucket, FnvIndexMap, IndexMap, Pos};
@@ -97,7 +98,7 @@ mod vec;
 // #[cfg(feature = "serde")]
 // mod ser;
 
-// pub mod binary_heap;
+pub mod binary_heap;
 // pub mod i;
 // #[cfg(all(has_cas, feature = "cas"))]
 // pub mod mpmc;
@@ -109,4 +110,4 @@ mod vec;
 #[cfg(feature = "ufmt-impl")]
 mod ufmt;
 
-// mod sealed;
+mod sealed;
