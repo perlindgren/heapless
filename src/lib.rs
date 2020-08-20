@@ -104,8 +104,8 @@ pub mod binary_heap;
 // pub mod mpmc;
 // #[cfg(all(has_cas, feature = "cas"))]
 // pub mod pool;
-// #[cfg(has_atomics)]
-// pub mod spsc;
+#[cfg(has_atomics)]
+pub mod spsc;
 
 #[cfg(feature = "ufmt-impl")]
 mod ufmt;
