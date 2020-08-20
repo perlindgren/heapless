@@ -1,5 +1,4 @@
 use core::{fmt, hash, iter::FromIterator, mem::MaybeUninit, ops, ptr, slice};
-
 use hash32;
 
 /// A fixed capacity [`Vec`](https://doc.rust-lang.org/std/vec/struct.Vec.html)
@@ -36,29 +35,7 @@ pub struct Vec<T, const N: usize> {
     len: usize,
 }
 
-// PER: Not sure transparent will be needed any longer
-
-// // repr(transparent) is needed for [`String::as_mut_vec`]
-// #[repr(transparent)]
-// pub struct Vec<T, N>(#[doc(hidden)] pub crate::i::Vec<GenericArray<T, N>>)
-// where
-//     N: ArrayLength<T>;
-
-// impl<T, N> Clone for Vec<T, N>
-// where
-//     N: ArrayLength<T>,
-//     T: Clone,
-// {
-//     fn clone(&self) -> Self {
-//         Vec(self.0.clone())
-//     }
-// }
-
-impl<T, const N: usize> Vec<T, N>
-// where
-//     T: Sized, // not sure we need this
-{
-    /* Constructors */
+impl<T, const N: usize> Vec<T, N> {
     /// Constructs a new, empty vector with a fixed capacity of `N`
     ///
     /// # Examples
@@ -78,6 +55,27 @@ impl<T, const N: usize> Vec<T, N>
             buffer: MaybeUninit::uninit(),
             len: 0,
         }
+    }
+
+    /// Constructs a new vector with a fixed capacity of `N` and fills it
+    /// with the provided slice.
+    ///
+    /// This is equivalent to the following code:
+    ///
+    /// ```
+    /// use heapless::Vec;
+    ///
+    /// let mut v: Vec<u8, 16> = Vec::new();
+    /// v.extend_from_slice(&[1, 2, 3]).unwrap();
+    /// ```
+    #[inline]
+    pub fn from_slice(other: &[T]) -> Result<Self, ()>
+    where
+        T: Clone,
+    {
+        let mut v = Vec::new();
+        v.extend_from_slice(other)?;
+        Ok(v)
     }
 
     /// Clones a vec into a new vec
@@ -125,38 +123,20 @@ impl<T, const N: usize> Vec<T, N>
         unsafe { slice::from_raw_parts_mut(self.buffer.as_mut_ptr() as *mut T, self.len) }
     }
 
-    /// Constructs a new vector with a fixed capacity of `N` and fills it
-    /// with the provided slice.
-    ///
-    /// This is equivalent to the following code:
-    ///
-    /// ```
-    /// use heapless::Vec;
-    ///
-    /// let mut v: Vec<u8, 16> = Vec::new();
-    /// v.extend_from_slice(&[1, 2, 3]).unwrap();
-    /// ```
-    #[inline]
-    pub fn from_slice(other: &[T]) -> Result<Self, ()>
-    where
-        T: Clone,
-    {
-        let mut v = Vec::new();
-        v.extend_from_slice(other)?;
-        Ok(v)
-    }
-
     /// Returns the maximum number of elements the vector can hold.
     pub const fn capacity(&self) -> usize {
         N
     }
 
     /// Clears the vector, removing all values.
+    // PER: Check if non drop types correctly optimized.
     pub fn clear(&mut self) {
         self.truncate(0);
     }
 
     /// Extends the vec from an iterator.
+    ///
+    /// # Panic
     ///
     /// Panics if the vec cannot hold all elements of the iterator.
     pub fn extend<I>(&mut self, iter: I)
@@ -370,23 +350,22 @@ impl<T, const N: usize> Vec<T, N>
     /// use core::iter::FromIterator;
     /// use heapless::Vec;
     ///
-    /// // let mut vec = Vec::from_iter([1, 0, 0].iter().cloned());
     ///         
-    // / let mut vec = Vec::<Vec<u8, 3>, 3>::from_iter(
-    // /     [
-    // /         Vec::from_iter([1, 0, 0].iter().cloned()),
-    // /         Vec::from_iter([0, 1, 0].iter().cloned()),
-    // /         Vec::from_iter([0, 0, 1].iter().cloned()),
-    // /     ]
-    // /     .iter()
-    // /     .cloned()
-    // / );
-    // / // SAFETY:
-    // / // 1. `old_len..0` is empty so no elements need to be initialized.
-    // / // 2. `0 <= capacity` always holds whatever `capacity` is.
-    // / unsafe {
-    // /     vec.set_len(0);
-    // / }
+    /// let mut vec = Vec::<Vec<u8, 3>, 3>::from_iter(
+    ///     [
+    ///         Vec::from_iter([1, 0, 0].iter().cloned()),
+    ///         Vec::from_iter([0, 1, 0].iter().cloned()),
+    ///         Vec::from_iter([0, 0, 1].iter().cloned()),
+    ///     ]
+    ///     .iter()
+    ///     .cloned()
+    /// );
+    /// // SAFETY:
+    /// // 1. `old_len..0` is empty so no elements need to be initialized.
+    /// // 2. `0 <= capacity` always holds whatever `capacity` is.
+    /// unsafe {
+    ///     vec.set_len(0);
+    /// }
     /// ```
     ///
     /// Normally, here, one would use [`clear`] instead to correctly drop
@@ -546,7 +525,7 @@ impl<const N: usize> fmt::Write for Vec<u8, N> {
     }
 }
 
-// PER: Please check
+// PER: Please check if non drop types are correctly optimized
 impl<T, const N: usize> Drop for Vec<T, N> {
     fn drop(&mut self) {
         // We drop each element used in the vector by turning into a &mut[T]
@@ -722,12 +701,13 @@ where
     }
 }
 
-// Vec<A, N> == [B; N]
-impl<A, B, const N: usize> PartialEq<[B; N]> for Vec<A, N>
+// Vec<A, N> == [B; M]
+// Equality does not require equal capacity
+impl<A, B, const N: usize, const M: usize> PartialEq<[B; M]> for Vec<A, N>
 where
     A: PartialEq<B>,
 {
-    fn eq(&self, other: &[B; N]) -> bool {
+    fn eq(&self, other: &[B; M]) -> bool {
         <[A]>::eq(self, &other[..])
     }
 }
@@ -785,6 +765,15 @@ impl<T, const N: usize> AsMut<[T]> for Vec<T, N> {
     #[inline]
     fn as_mut(&mut self) -> &mut [T] {
         self
+    }
+}
+
+impl<T, const N: usize> Clone for Vec<T, N>
+where
+    T: Clone,
+{
+    fn clone(&self) -> Self {
+        self.clone()
     }
 }
 
