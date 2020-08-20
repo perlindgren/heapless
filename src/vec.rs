@@ -203,7 +203,9 @@ impl<T, const N: usize> Vec<T, N> {
 
     /// Removes the last element from a vector and returns it
     ///
-    /// Safety: This assumes the vec to have at least one element.
+    /// # Safety
+    ///
+    /// This assumes the vec to have at least one element.
     pub(crate) unsafe fn pop_unchecked(&mut self) -> T {
         debug_assert!(!self.as_slice().is_empty());
 
@@ -213,7 +215,9 @@ impl<T, const N: usize> Vec<T, N> {
 
     /// Appends an `item` to the back of the collection
     ///
-    /// Safety: This assumes the vec is not full.
+    /// # Safety
+    ///
+    /// This assumes the vec is not full.
     pub unsafe fn push_unchecked(&mut self, item: T) {
         // NOTE(ptr::write) the memory slot that we are about to write to is uninitialized. We
         // use `ptr::write` to avoid running `T`'s destructor on the uninitialized memory
@@ -226,6 +230,7 @@ impl<T, const N: usize> Vec<T, N> {
     }
 
     /// Shortens the vector, keeping the first `len` elements and dropping the rest.
+    // PER: Check that non drop types are correctly optimized
     pub fn truncate(&mut self, len: usize) {
         unsafe {
             // drop any extra elements
@@ -345,7 +350,6 @@ impl<T, const N: usize> Vec<T, N> {
     /// While the following example is sound, there is a memory leak since
     /// the inner vectors were not freed prior to the `set_len` call:
     ///
-    /// PER: TODO seems we are missing something here
     /// ```
     /// use core::iter::FromIterator;
     /// use heapless::Vec;
