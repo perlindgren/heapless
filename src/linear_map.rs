@@ -12,7 +12,10 @@ use crate::Vec;
 ///
 /// Note that as this map doesn't use hashing so most operations are **O(N)** instead of O(1)
 
-pub struct LinearMap<K, V, const N: usize> {
+pub struct LinearMap<K, V, const N: usize>
+where
+    K: Eq,
+{
     pub(crate) buffer: Vec<(K, V), N>,
 }
 
@@ -26,13 +29,12 @@ where
     ///
     /// ```
     /// use heapless::LinearMap;
-    /// use heapless::consts::*;
     ///
     /// // allocate the map on the stack
-    /// let mut map: LinearMap<&str, isize, U8> = LinearMap::new();
+    /// let mut map: LinearMap<&str, isize, 8> = LinearMap::new();
     ///
     /// // allocate the map in a static variable
-    /// static mut MAP: LinearMap<&str, isize, U8> = LinearMap(heapless::i::LinearMap::new());
+    /// static mut MAP: LinearMap<&str, isize, 8> = LinearMap::new();
     /// ```
     pub const fn new() -> Self {
         Self { buffer: Vec::new() }
@@ -46,9 +48,8 @@ where
     ///
     /// ```
     /// use heapless::LinearMap;
-    /// use heapless::consts::*;
     ///
-    /// let map: LinearMap<&str, isize, U8> = LinearMap::new();
+    /// let map: LinearMap<&str, isize, 8> = LinearMap::new();
     /// assert_eq!(map.capacity(), 8);
     /// ```
     pub fn capacity(&self) -> usize {
@@ -63,9 +64,8 @@ where
     ///
     /// ```
     /// use heapless::LinearMap;
-    /// use heapless::consts::*;
     ///
-    /// let mut map: LinearMap<_, _, U8> = LinearMap::new();
+    /// let mut map: LinearMap<_, _, 8> = LinearMap::new();
     /// map.insert(1, "a").unwrap();
     /// map.clear();
     /// assert!(map.is_empty());
@@ -82,9 +82,8 @@ where
     ///
     /// ```
     /// use heapless::LinearMap;
-    /// use heapless::consts::*;
     ///
-    /// let mut map: LinearMap<_, _, U8> = LinearMap::new();
+    /// let mut map: LinearMap<_, _, 8> = LinearMap::new();
     /// map.insert(1, "a").unwrap();
     /// assert_eq!(map.contains_key(&1), true);
     /// assert_eq!(map.contains_key(&2), false);
@@ -101,9 +100,8 @@ where
     ///
     /// ```
     /// use heapless::LinearMap;
-    /// use heapless::consts::*;
     ///
-    /// let mut map: LinearMap<_, _, U8> = LinearMap::new();
+    /// let mut map: LinearMap<_, _, 8> = LinearMap::new();
     /// map.insert(1, "a").unwrap();
     /// assert_eq!(map.get(&1), Some(&"a"));
     /// assert_eq!(map.get(&2), None);
@@ -126,9 +124,8 @@ where
     ///
     /// ```
     /// use heapless::LinearMap;
-    /// use heapless::consts::*;
     ///
-    /// let mut map: LinearMap<_, _, U8> = LinearMap::new();
+    /// let mut map: LinearMap<_, _, 8> = LinearMap::new();
     /// map.insert(1, "a").unwrap();
     /// if let Some(x) = map.get_mut(&1) {
     ///     *x = "b";
@@ -153,9 +150,8 @@ where
     ///
     /// ```
     /// use heapless::LinearMap;
-    /// use heapless::consts::*;
     ///
-    /// let mut a: LinearMap<_, _, U8> = LinearMap::new();
+    /// let mut a: LinearMap<_, _, 8> = LinearMap::new();
     /// assert_eq!(a.len(), 0);
     /// a.insert(1, "a").unwrap();
     /// assert_eq!(a.len(), 1);
@@ -176,9 +172,8 @@ where
     ///
     /// ```
     /// use heapless::LinearMap;
-    /// use heapless::consts::*;
     ///
-    /// let mut map: LinearMap<_, _, U8> = LinearMap::new();
+    /// let mut map: LinearMap<_, _, 8> = LinearMap::new();
     /// assert_eq!(map.insert(37, "a").unwrap(), None);
     /// assert_eq!(map.is_empty(), false);
     ///
@@ -204,9 +199,8 @@ where
     ///
     /// ```
     /// use heapless::LinearMap;
-    /// use heapless::consts::*;
     ///
-    /// let mut a: LinearMap<_, _, U8> = LinearMap::new();
+    /// let mut a: LinearMap<_, _, 8> = LinearMap::new();
     /// assert!(a.is_empty());
     /// a.insert(1, "a").unwrap();
     /// assert!(!a.is_empty());
@@ -221,9 +215,8 @@ where
     ///
     /// ```
     /// use heapless::LinearMap;
-    /// use heapless::consts::*;
     ///
-    /// let mut map: LinearMap<_, _, U8> = LinearMap::new();
+    /// let mut map: LinearMap<_, _, 8> = LinearMap::new();
     /// map.insert("a", 1).unwrap();
     /// map.insert("b", 2).unwrap();
     /// map.insert("c", 3).unwrap();
@@ -245,9 +238,8 @@ where
     ///
     /// ```
     /// use heapless::LinearMap;
-    /// use heapless::consts::*;
     ///
-    /// let mut map: LinearMap<_, _, U8> = LinearMap::new();
+    /// let mut map: LinearMap<_, _, 8> = LinearMap::new();
     /// map.insert("a", 1).unwrap();
     /// map.insert("b", 2).unwrap();
     /// map.insert("c", 3).unwrap();
@@ -273,9 +265,8 @@ where
     ///
     /// ```
     /// use heapless::LinearMap;
-    /// use heapless::consts::*;
     ///
-    /// let mut map: LinearMap<_, _, U8> = LinearMap::new();
+    /// let mut map: LinearMap<_, _, 8> = LinearMap::new();
     /// map.insert("a", 1).unwrap();
     /// map.insert("b", 2).unwrap();
     /// map.insert("c", 3).unwrap();
@@ -297,9 +288,8 @@ where
     ///
     /// ```
     /// use heapless::LinearMap;
-    /// use heapless::consts::*;
     ///
-    /// let mut map: LinearMap<_, _, U8> = LinearMap::new();
+    /// let mut map: LinearMap<_, _, 8> = LinearMap::new();
     /// map.insert(1, "a").unwrap();
     /// assert_eq!(map.remove(&1), Some("a"));
     /// assert_eq!(map.remove(&1), None);
@@ -324,9 +314,8 @@ where
     ///
     /// ```
     /// use heapless::LinearMap;
-    /// use heapless::consts::*;
     ///
-    /// let mut map: LinearMap<_, _, U8> = LinearMap::new();
+    /// let mut map: LinearMap<_, _, 8> = LinearMap::new();
     /// map.insert("a", 1).unwrap();
     /// map.insert("b", 2).unwrap();
     /// map.insert("c", 3).unwrap();
@@ -345,9 +334,8 @@ where
     ///
     /// ```
     /// use heapless::LinearMap;
-    /// use heapless::consts::*;
     ///
-    /// let mut map: LinearMap<_, _, U8> = LinearMap::new();
+    /// let mut map: LinearMap<_, _, 8> = LinearMap::new();
     /// map.insert("a", 1).unwrap();
     /// map.insert("b", 2).unwrap();
     /// map.insert("c", 3).unwrap();
@@ -449,23 +437,24 @@ where
     }
 }
 
-impl<K, V, const N: usize> IntoIterator for LinearMap<K, V, N>
-where
-    K: Eq,
-{
-    type Item = (K, V);
-    type IntoIter = IntoIter<K, V, N>;
+// TODO: Why is this needed at all, no example, no test... I don't get it
+// impl<K, V, const N: usize> IntoIterator for LinearMap<K, V, N>
+// where
+//     K: Eq,
+// {
+//     type Item = (K, V);
+//     type IntoIter = IntoIter<K, V, N>;
 
-    fn into_iter(mut self) -> Self::IntoIter {
-        // FIXME this may result in a memcpy at runtime
-        let lm = mem::replace(&mut self, unsafe { MaybeUninit::uninit().assume_init() });
-        mem::forget(self);
+//     fn into_iter(mut self) -> Self::IntoIter {
+//         // FIXME this may result in a memcpy at runtime
+//         let lm = mem::replace(&mut self, unsafe { MaybeUninit::uninit().assume_init() });
+//         mem::forget(self);
 
-        Self::IntoIter {
-            inner: lm.buffer.into_iter(),
-        }
-    }
-}
+//         Self::IntoIter {
+//             inner: lm.buffer.into_iter(),
+//         }
+//     }
+// }
 
 impl<'a, K, V, const N: usize> IntoIterator for &'a LinearMap<K, V, N>
 where
@@ -499,14 +488,17 @@ impl<'a, K, V> Clone for Iter<'a, K, V> {
     }
 }
 
-// impl<K, V, const N: usize> Drop for LinearMap<K, V, N>
-// where
-//     K: Eq,
-// {
-//     fn drop(&mut self) {
-//         unsafe { ptr::drop_in_place(self.buffer.as_mut_slice()) }
-//     }
-// }
+impl<K, V, const N: usize> Drop for LinearMap<K, V, N>
+where
+    K: Eq,
+{
+    fn drop(&mut self) {
+        // heapless::Vec implements drop right?
+        drop(&self.buffer);
+        // original code below
+        // unsafe { ptr::drop_in_place(self.buffer.as_mut_slice()) }
+    }
+}
 
 pub struct IterMut<'a, K, V> {
     iter: slice::IterMut<'a, (K, V)>,
@@ -546,16 +538,16 @@ mod test {
 
     #[test]
     fn static_new() {
-        static mut _L: LinearMap<i32, i32, U8> = LinearMap(crate::i::LinearMap::new());
+        static mut _L: LinearMap<i32, i32, 8> = LinearMap::new();
     }
 
     #[test]
     fn partial_eq() {
         {
-            let mut a = LinearMap::<_, _, U1>::new();
+            let mut a = LinearMap::<_, _, 1>::new();
             a.insert("k1", "v1").unwrap();
 
-            let mut b = LinearMap::<_, _, U2>::new();
+            let mut b = LinearMap::<_, _, 2>::new();
             b.insert("k1", "v1").unwrap();
 
             assert!(a == b);
@@ -566,15 +558,17 @@ mod test {
         }
 
         {
-            let mut a = LinearMap::<_, _, U2>::new();
+            let mut a = LinearMap::<_, _, 2>::new();
             a.insert("k1", "v1").unwrap();
             a.insert("k2", "v2").unwrap();
 
-            let mut b = LinearMap::<_, _, U2>::new();
+            let mut b = LinearMap::<_, _, 2>::new();
             b.insert("k2", "v2").unwrap();
             b.insert("k1", "v1").unwrap();
 
             assert!(a == b);
         }
     }
+
+    // TODO: drop test
 }
