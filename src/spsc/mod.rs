@@ -735,17 +735,17 @@ mod tests {
         assert_eq!(rb.dequeue(), None);
     }
 
-    //     #[test]
-    //     #[cfg(feature = "smaller-atomics")]
-    //     fn u8() {
-    //         let mut rb: Queue<u8, U256, _> = Queue::u8();
+    #[test]
+    #[cfg(feature = "smaller-atomics")]
+    fn u8() {
+        let mut rb: Queue<u8, U256, _> = Queue::u8();
 
-    //         for _ in 0..255 {
-    //             rb.enqueue(0).unwrap();
-    //         }
+        for _ in 0..255 {
+            rb.enqueue(0).unwrap();
+        }
 
-    //         assert!(rb.enqueue(0).is_err());
-    //     }
+        assert!(rb.enqueue(0).is_err());
+    }
 
     #[test]
     fn wrap_around() {
