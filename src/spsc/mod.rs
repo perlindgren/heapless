@@ -312,7 +312,7 @@ macro_rules! impl_ {
 
         impl<T, const N: usize> Queue<T, $uxx, SingleCore, N> {
             /// Creates an empty queue with a fixed capacity of `N` (single core variant)
-            pub unsafe fn $uxx_sc() -> Self {
+            pub const unsafe fn $uxx_sc() -> Self {
                 Self {
                     buffer: MaybeUninit::uninit(),
                     head: Atomic::new(0),
@@ -611,7 +611,7 @@ mod tests {
 
     #[test]
     fn static_new() {
-        static mut _Q: Queue<i32, usize, SingleCore, 4> = Queue::new_sc();
+        static mut _Q: Queue<i32, usize, SingleCore, 4> = unsafe { Queue::usize_sc() };
     }
 
     #[test]
@@ -636,128 +636,124 @@ mod tests {
 
         static mut COUNT: i32 = 0;
 
-        // {
-        //     let mut v: Queue<Droppable, usize, SingleCore, 4> = Queue::new();
-        //     v.enqueue(Droppable::new()).ok().unwrap();
-        //     v.enqueue(Droppable::new()).ok().unwrap();
-        //     v.dequeue().unwrap();
-        // }
+        {
+            let mut v: Queue<Droppable, usize, SingleCore, 4> = unsafe { Queue::usize_sc() };
+            v.enqueue(Droppable::new()).ok().unwrap();
+            v.enqueue(Droppable::new()).ok().unwrap();
+            v.dequeue().unwrap();
+        }
 
-        //         assert_eq!(unsafe { COUNT }, 0);
+        assert_eq!(unsafe { COUNT }, 0);
 
-        //         {
-        //             let mut v: Queue<Droppable, U4> = Queue::new();
-        //             v.enqueue(Droppable::new()).ok().unwrap();
-        //             v.enqueue(Droppable::new()).ok().unwrap();
-        //         }
+        {
+            let mut v: Queue<Droppable, usize, MultiCore, 4> = Queue::usize();
+            v.enqueue(Droppable::new()).ok().unwrap();
+            v.enqueue(Droppable::new()).ok().unwrap();
+        }
 
-        //         assert_eq!(unsafe { COUNT }, 0);
+        assert_eq!(unsafe { COUNT }, 0);
     }
 
-    //     #[test]
-    //     fn full() {
-    //         let mut rb: Queue<i32, U4> = Queue::new();
+    #[test]
+    fn full() {
+        let mut rb: Queue<i32, u8, MultiCore, 4> = Queue::u8();
 
-    //         rb.enqueue(0).unwrap();
-    //         rb.enqueue(1).unwrap();
-    //         rb.enqueue(2).unwrap();
-    //         rb.enqueue(3).unwrap();
+        rb.enqueue(0).unwrap();
+        rb.enqueue(1).unwrap();
+        rb.enqueue(2).unwrap();
+        rb.enqueue(3).unwrap();
 
-    //         assert!(rb.enqueue(4).is_err());
-    //     }
+        assert!(rb.enqueue(4).is_err());
+    }
 
-    //     #[test]
-    //     fn iter() {
-    //         let mut rb: Queue<i32, U4> = Queue::new();
+    #[test]
+    fn iter() {
+        let mut rb: Queue<i32, u16, MultiCore, 4> = Queue::u16();
 
-    //         rb.enqueue(0).unwrap();
-    //         rb.enqueue(1).unwrap();
-    //         rb.enqueue(2).unwrap();
+        rb.enqueue(0).unwrap();
+        rb.enqueue(1).unwrap();
+        rb.enqueue(2).unwrap();
 
-    //         let mut items = rb.iter();
+        let mut items = rb.iter();
 
-    //         assert_eq!(items.next(), Some(&0));
-    //         assert_eq!(items.next(), Some(&1));
-    //         assert_eq!(items.next(), Some(&2));
-    //         assert_eq!(items.next(), None);
-    //     }
+        assert_eq!(items.next(), Some(&0));
+        assert_eq!(items.next(), Some(&1));
+        assert_eq!(items.next(), Some(&2));
+        assert_eq!(items.next(), None);
+    }
 
-    //     #[test]
-    //     fn iter_double_ended() {
-    //         let mut rb: Queue<i32, U4> = Queue::new();
+    #[test]
+    fn iter_double_ended() {
+        let mut rb: Queue<i32, u8, MultiCore, 4> = Queue::u8();
 
-    //         rb.enqueue(0).unwrap();
-    //         rb.enqueue(1).unwrap();
-    //         rb.enqueue(2).unwrap();
+        rb.enqueue(0).unwrap();
+        rb.enqueue(1).unwrap();
+        rb.enqueue(2).unwrap();
 
-    //         let mut items = rb.iter();
+        let mut items = rb.iter();
 
-    //         assert_eq!(items.next(), Some(&0));
-    //         assert_eq!(items.next_back(), Some(&2));
-    //         assert_eq!(items.next(), Some(&1));
-    //         assert_eq!(items.next(), None);
-    //         assert_eq!(items.next_back(), None);
-    //     }
+        assert_eq!(items.next(), Some(&0));
+        assert_eq!(items.next_back(), Some(&2));
+        assert_eq!(items.next(), Some(&1));
+        assert_eq!(items.next(), None);
+        assert_eq!(items.next_back(), None);
+    }
 
-    //     #[test]
-    //     fn iter_overflow() {
-    //         let mut rb: Queue<i32, U4, u8> = Queue::u8();
+    #[test]
+    fn iter_overflow() {
+        let mut rb: Queue<i32, u8, MultiCore, 4> = Queue::u8();
 
-    //         rb.enqueue(0).unwrap();
-    //         for _ in 0..300 {
-    //             let mut items = rb.iter_mut();
-    //             assert_eq!(items.next(), Some(&mut 0));
-    //             assert_eq!(items.next(), None);
-    //             rb.dequeue().unwrap();
-    //             rb.enqueue(0).unwrap();
-    //         }
-    //     }
+        rb.enqueue(0).unwrap();
+        for _ in 0..300 {
+            let mut items = rb.iter_mut();
+            assert_eq!(items.next(), Some(&mut 0));
+            assert_eq!(items.next(), None);
+            rb.dequeue().unwrap();
+            rb.enqueue(0).unwrap();
+        }
+    }
 
-    //     #[test]
-    //     fn iter_mut() {
-    //         let mut rb: Queue<i32, U4> = Queue::new();
+    #[test]
+    fn iter_mut() {
+        let mut rb: Queue<i32, u8, MultiCore, 4> = Queue::u8();
 
-    //         rb.enqueue(0).unwrap();
-    //         rb.enqueue(1).unwrap();
-    //         rb.enqueue(2).unwrap();
+        rb.enqueue(0).unwrap();
+        rb.enqueue(1).unwrap();
+        rb.enqueue(2).unwrap();
 
-    //         let mut items = rb.iter_mut();
+        let mut items = rb.iter_mut();
 
-    //         assert_eq!(items.next(), Some(&mut 0));
-    //         assert_eq!(items.next(), Some(&mut 1));
-    //         assert_eq!(items.next(), Some(&mut 2));
-    //         assert_eq!(items.next(), None);
-    //     }
+        assert_eq!(items.next(), Some(&mut 0));
+        assert_eq!(items.next(), Some(&mut 1));
+        assert_eq!(items.next(), Some(&mut 2));
+        assert_eq!(items.next(), None);
+    }
 
-    //     #[test]
-    //     fn iter_mut_double_ended() {
-    //         let mut rb: Queue<i32, U4> = Queue::new();
+    #[test]
+    fn iter_mut_double_ended() {
+        let mut rb: Queue<i32, u8, MultiCore, 4> = Queue::u8();
 
-    //         rb.enqueue(0).unwrap();
-    //         rb.enqueue(1).unwrap();
-    //         rb.enqueue(2).unwrap();
+        rb.enqueue(0).unwrap();
+        rb.enqueue(1).unwrap();
+        rb.enqueue(2).unwrap();
 
-    //         let mut items = rb.iter_mut();
+        let mut items = rb.iter_mut();
 
-    //         assert_eq!(items.next(), Some(&mut 0));
-    //         assert_eq!(items.next_back(), Some(&mut 2));
-    //         assert_eq!(items.next(), Some(&mut 1));
-    //         assert_eq!(items.next(), None);
-    //         assert_eq!(items.next_back(), None);
-    //     }
+        assert_eq!(items.next(), Some(&mut 0));
+        assert_eq!(items.next_back(), Some(&mut 2));
+        assert_eq!(items.next(), Some(&mut 1));
+        assert_eq!(items.next(), None);
+        assert_eq!(items.next_back(), None);
+    }
 
-    //     #[test]
-    //     fn sanity() {
-    //         let mut rb: Queue<i32, U4> = Queue::new();
-
-    //         assert_eq!(rb.dequeue(), None);
-
-    //         rb.enqueue(0).unwrap();
-
-    //         assert_eq!(rb.dequeue(), Some(0));
-
-    //         assert_eq!(rb.dequeue(), None);
-    //     }
+    #[test]
+    fn sanity() {
+        let mut rb: Queue<i32, u8, MultiCore, 4> = Queue::u8();
+        assert_eq!(rb.dequeue(), None);
+        rb.enqueue(0).unwrap();
+        assert_eq!(rb.dequeue(), Some(0));
+        assert_eq!(rb.dequeue(), None);
+    }
 
     //     #[test]
     //     #[cfg(feature = "smaller-atomics")]
@@ -771,49 +767,49 @@ mod tests {
     //         assert!(rb.enqueue(0).is_err());
     //     }
 
-    //     #[test]
-    //     fn wrap_around() {
-    //         let mut rb: Queue<i32, U3> = Queue::new();
+    #[test]
+    fn wrap_around() {
+        let mut rb: Queue<i32, u8, MultiCore, 3> = Queue::u8();
 
-    //         rb.enqueue(0).unwrap();
-    //         rb.enqueue(1).unwrap();
-    //         rb.enqueue(2).unwrap();
-    //         rb.dequeue().unwrap();
-    //         rb.dequeue().unwrap();
-    //         rb.dequeue().unwrap();
-    //         rb.enqueue(3).unwrap();
-    //         rb.enqueue(4).unwrap();
+        rb.enqueue(0).unwrap();
+        rb.enqueue(1).unwrap();
+        rb.enqueue(2).unwrap();
+        rb.dequeue().unwrap();
+        rb.dequeue().unwrap();
+        rb.dequeue().unwrap();
+        rb.enqueue(3).unwrap();
+        rb.enqueue(4).unwrap();
 
-    //         assert_eq!(rb.len(), 2);
-    //     }
+        assert_eq!(rb.len(), 2);
+    }
 
-    //     #[test]
-    //     fn ready_flag() {
-    //         let mut rb: Queue<i32, U2> = Queue::new();
-    //         let (mut p, mut c) = rb.split();
-    //         assert_eq!(c.ready(), false);
-    //         assert_eq!(p.ready(), true);
+    #[test]
+    fn ready_flag() {
+        let mut rb: Queue<i32, u8, MultiCore, 4> = Queue::u8();
+        let (mut p, mut c) = rb.split();
+        assert_eq!(c.ready(), false);
+        assert_eq!(p.ready(), true);
 
-    //         p.enqueue(0).unwrap();
+        p.enqueue(0).unwrap();
 
-    //         assert_eq!(c.ready(), true);
-    //         assert_eq!(p.ready(), true);
+        assert_eq!(c.ready(), true);
+        assert_eq!(p.ready(), true);
 
-    //         p.enqueue(1).unwrap();
+        p.enqueue(1).unwrap();
 
-    //         assert_eq!(c.ready(), true);
-    //         assert_eq!(p.ready(), false);
+        assert_eq!(c.ready(), true);
+        assert_eq!(p.ready(), false);
 
-    //         c.dequeue().unwrap();
+        c.dequeue().unwrap();
 
-    //         assert_eq!(c.ready(), true);
-    //         assert_eq!(p.ready(), true);
+        assert_eq!(c.ready(), true);
+        assert_eq!(p.ready(), true);
 
-    //         c.dequeue().unwrap();
+        c.dequeue().unwrap();
 
-    //         assert_eq!(c.ready(), false);
-    //         assert_eq!(p.ready(), true);
-    //     }
+        assert_eq!(c.ready(), false);
+        assert_eq!(p.ready(), true);
+    }
 
     //     #[test]
     //     fn clone() {
