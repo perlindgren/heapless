@@ -738,7 +738,7 @@ mod tests {
     #[test]
     #[cfg(feature = "smaller-atomics")]
     fn u8() {
-        let mut rb: Queue<u8, U256, _> = Queue::u8();
+        let mut rb: Queue<u8, u8, MultiCore, 256> = Queue::u8();
 
         for _ in 0..255 {
             rb.enqueue(0).unwrap();
