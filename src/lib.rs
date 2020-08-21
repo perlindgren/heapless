@@ -80,7 +80,7 @@ pub use binary_heap::BinaryHeap;
 // pub use generic_array::ArrayLength;
 pub use indexmap::{Bucket, FnvIndexMap, IndexMap, Pos};
 pub use indexset::{FnvIndexSet, IndexSet};
-// pub use linear_map::LinearMap;
+pub use linear_map::LinearMap;
 pub use string::String;
 pub use vec::Vec;
 // pub use histbuf::HistoryBuffer;
@@ -88,7 +88,7 @@ pub use vec::Vec;
 // NOTE this code was last ported from v0.4.1 of the indexmap crate
 mod indexmap;
 mod indexset;
-// mod linear_map;
+mod linear_map;
 mod string;
 mod vec;
 // mod histbuf;
