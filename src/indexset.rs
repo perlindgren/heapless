@@ -7,6 +7,8 @@ use crate::indexmap::{self, Bucket, IndexMap, Pos};
 /// An `IndexSet` using the default FNV hasher
 pub type FnvIndexSet<T, const N: usize> = IndexSet<T, BuildHasherDefault<FnvHasher>, N>;
 
+// TODO: We don't enforce the power of 2 currently (part of generic array bounds)
+
 /// Fixed capacity [`IndexSet`](https://docs.rs/indexmap/1/indexmap/set/struct.IndexSet.html)
 ///
 /// Note that the capacity of the `IndexSet` must be a power of 2.
