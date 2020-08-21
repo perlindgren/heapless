@@ -9,9 +9,8 @@
 //!
 //! ```
 //! use heapless::spsc::Queue;
-//! use heapless::consts::*;
 //!
-//! let mut rb: Queue<u8, U4> = Queue::new();
+//! let mut rb: Queue<u8, _, _, 4> = Queue::new();
 //!
 //! assert!(rb.enqueue(0).is_ok());
 //! assert!(rb.enqueue(1).is_ok());
@@ -25,9 +24,11 @@
 //! - `Queue` can be `split` and then be used in Single Producer Single Consumer mode
 //!
 //! ```
-//! use heapless::spsc::Queue;
+//! use heapless::spsc::{Queue, MultiCore};
 //!
-//! static mut Q: Queue<Event, 4> = Queue::new();
+//! // Notice, type signature needs to be explicit for now.
+//! // (min_const_eval, does not allow for default type assignments)
+//! static mut Q: Queue<Event, usize, MultiCore, 4> = Queue::new();
 //!
 //! enum Event { A, B }
 //!
@@ -84,7 +85,6 @@
 
 use core::{cell::UnsafeCell, fmt, hash, marker::PhantomData, mem::MaybeUninit, ptr};
 
-// use generic_array::{ArrayLength, GenericArray};
 use hash32;
 
 use crate::sealed::spsc as sealed;
@@ -332,7 +332,7 @@ macro_rules! impl_ {
             /// ```
             /// use heapless::spsc::Queue;
             ///
-            /// let mut queue: Queue<u8, 235, _> = Queue::u8();
+            /// let mut queue: Queue<u8, _, _, 235> = Queue::u8();
             /// let (mut producer, mut consumer) = queue.split();
             /// assert_eq!(None, consumer.peek());
             /// producer.enqueue(1);
@@ -590,8 +590,18 @@ mod tests {
     use crate::spsc::{MultiCore, Queue, SingleCore};
 
     #[test]
-    fn static_new() {
+    fn static_usize_sc() {
         static mut _Q: Queue<i32, usize, SingleCore, 4> = unsafe { Queue::usize_sc() };
+    }
+
+    #[test]
+    fn static_usize() {
+        static mut _Q: Queue<i32, usize, MultiCore, 4> = Queue::usize();
+    }
+
+    #[test]
+    fn static_new() {
+        static mut _Q: Queue<i32, usize, MultiCore, 4> = Queue::new();
     }
 
     #[test]

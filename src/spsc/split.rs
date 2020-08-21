@@ -83,9 +83,8 @@ macro_rules! impl_ {
             /// # Examples
             /// ```
             /// use heapless::spsc::Queue;
-            /// use heapless::consts::*;
             ///
-            /// let mut queue: Queue<u8, U235, _> = Queue::u8();
+            /// let mut queue: Queue<u8, _, _, 235> = Queue::u8();
             /// let (mut producer, mut consumer) = queue.split();
             /// assert_eq!(None, consumer.peek());
             /// producer.enqueue(1);
