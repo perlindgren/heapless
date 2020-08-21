@@ -88,7 +88,7 @@ use core::{cell::UnsafeCell, fmt, hash, marker::PhantomData, mem::MaybeUninit, p
 use hash32;
 
 use crate::sealed::spsc as sealed;
-// pub use split::{Consumer, Producer};
+pub use split::{Consumer, Producer};
 
 mod split;
 
@@ -444,39 +444,19 @@ macro_rules! impl_ {
     };
 }
 
-// impl<A> crate::i::Queue<A, usize, MultiCore> {
-//     /// `spsc::Queue` `const` constructor; wrap the returned value in
-//     /// [`spsc::Queue`](struct.Queue.html)
-//     pub const fn new() -> Self {
-//         crate::i::Queue::usize()
-//     }
-// }
+impl<T, const N: usize> Queue<T, usize, MultiCore, N> {
+    /// Alias for [`spsc::Queue::usize`](struct.Queue.html#method.usize)
+    pub const fn new() -> Self {
+        Queue::usize()
+    }
+}
 
-// impl<T, N> Queue<T, N, usize, MultiCore>
-// where
-//     N: ArrayLength<T>,
-// {
-//     /// Alias for [`spsc::Queue::usize`](struct.Queue.html#method.usize)
-//     pub fn new() -> Self {
-//         Queue(crate::i::Queue::new())
-//     }
-// }
-
-// impl<A> crate::i::Queue<A, usize, SingleCore> {
-//     /// `spsc::Queue` `const` constructor; wrap the returned value in
-//     /// [`spsc::Queue`](struct.Queue.html)
-//     pub const unsafe fn new_sc() -> Self {
-//         crate::i::Queue::usize_sc()
-//     }
-// }
-
-// // PER: Do we need this?
-// impl<T, const N: usize> Queue<T, usize, SingleCore, N> {
-//     /// Alias for [`spsc::Queue::usize_sc`](struct.Queue.html#method.usize_sc)
-//     pub unsafe fn new_sc() -> Self {
-//         Queue::new_sc()
-//     }
-// }
+impl<T, const N: usize> Queue<T, usize, SingleCore, N> {
+    /// Alias for [`spsc::Queue::usize_sc`](struct.Queue.html#method.usize_sc)
+    pub unsafe fn new_sc() -> Self {
+        Queue::usize_sc()
+    }
+}
 
 impl_!(u8, u8_sc);
 impl_!(u16, u16_sc);
@@ -785,7 +765,7 @@ mod tests {
 
     #[test]
     fn ready_flag() {
-        let mut rb: Queue<i32, u8, MultiCore, 4> = Queue::u8();
+        let mut rb: Queue<i32, u8, MultiCore, 2> = Queue::u8();
         let (mut p, mut c) = rb.split();
         assert_eq!(c.ready(), false);
         assert_eq!(p.ready(), true);
@@ -811,74 +791,74 @@ mod tests {
         assert_eq!(p.ready(), true);
     }
 
-    //     #[test]
-    //     fn clone() {
-    //         let mut rb1: Queue<i32, U4> = Queue::new();
-    //         rb1.enqueue(0).unwrap();
-    //         rb1.enqueue(0).unwrap();
-    //         rb1.dequeue().unwrap();
-    //         rb1.enqueue(0).unwrap();
-    //         let rb2 = rb1.clone();
-    //         assert_eq!(rb1.capacity(), rb2.capacity());
-    //         assert_eq!(rb1.len_usize(), rb2.len_usize());
-    //         assert!(rb1.iter().zip(rb2.iter()).all(|(v1, v2)| v1 == v2));
-    //     }
+    #[test]
+    fn clone() {
+        let mut rb1: Queue<i32, u8, MultiCore, 4> = Queue::u8();
+        rb1.enqueue(0).unwrap();
+        rb1.enqueue(0).unwrap();
+        rb1.dequeue().unwrap();
+        rb1.enqueue(0).unwrap();
+        let rb2 = rb1.clone();
+        assert_eq!(rb1.capacity(), rb2.capacity());
+        assert_eq!(rb1.len_usize(), rb2.len_usize());
+        assert!(rb1.iter().zip(rb2.iter()).all(|(v1, v2)| v1 == v2));
+    }
 
-    //     #[test]
-    //     fn eq() {
-    //         // generate two queues with same content
-    //         // but different buffer alignment
-    //         let mut rb1: Queue<i32, U4> = Queue::new();
-    //         rb1.enqueue(0).unwrap();
-    //         rb1.enqueue(0).unwrap();
-    //         rb1.dequeue().unwrap();
-    //         rb1.enqueue(0).unwrap();
-    //         let mut rb2: Queue<i32, U4> = Queue::new();
-    //         rb2.enqueue(0).unwrap();
-    //         rb2.enqueue(0).unwrap();
-    //         assert!(rb1 == rb2);
-    //         // test for symmetry
-    //         assert!(rb2 == rb1);
-    //         // test for changes in content
-    //         rb1.enqueue(0).unwrap();
-    //         assert!(rb1 != rb2);
-    //         rb2.enqueue(1).unwrap();
-    //         assert!(rb1 != rb2);
-    //         // test for refexive relation
-    //         assert!(rb1 == rb1);
-    //         assert!(rb2 == rb2);
-    //     }
+    #[test]
+    fn eq() {
+        // generate two queues with same content
+        // but different buffer alignment
+        let mut rb1: Queue<i32, u8, MultiCore, 4> = Queue::u8();
+        rb1.enqueue(0).unwrap();
+        rb1.enqueue(0).unwrap();
+        rb1.dequeue().unwrap();
+        rb1.enqueue(0).unwrap();
+        let mut rb2: Queue<i32, u8, MultiCore, 4> = Queue::u8();
+        rb2.enqueue(0).unwrap();
+        rb2.enqueue(0).unwrap();
+        assert!(rb1 == rb2);
+        // test for symmetry
+        assert!(rb2 == rb1);
+        // test for changes in content
+        rb1.enqueue(0).unwrap();
+        assert!(rb1 != rb2);
+        rb2.enqueue(1).unwrap();
+        assert!(rb1 != rb2);
+        // test for refexive relation
+        assert!(rb1 == rb1);
+        assert!(rb2 == rb2);
+    }
 
-    //     #[test]
-    //     fn hash_equality() {
-    //         // generate two queues with same content
-    //         // but different buffer alignment
-    //         let rb1 = {
-    //             let mut rb1: Queue<i32, U4> = Queue::new();
-    //             rb1.enqueue(0).unwrap();
-    //             rb1.enqueue(0).unwrap();
-    //             rb1.dequeue().unwrap();
-    //             rb1.enqueue(0).unwrap();
-    //             rb1
-    //         };
-    //         let rb2 = {
-    //             let mut rb2: Queue<i32, U4> = Queue::new();
-    //             rb2.enqueue(0).unwrap();
-    //             rb2.enqueue(0).unwrap();
-    //             rb2
-    //         };
-    //         let hash1 = {
-    //             let mut hasher1 = hash32::FnvHasher::default();
-    //             hash32::Hash::hash(&rb1, &mut hasher1);
-    //             let hash1 = hasher1.finish();
-    //             hash1
-    //         };
-    //         let hash2 = {
-    //             let mut hasher2 = hash32::FnvHasher::default();
-    //             hash32::Hash::hash(&rb2, &mut hasher2);
-    //             let hash2 = hasher2.finish();
-    //             hash2
-    //         };
-    //         assert_eq!(hash1, hash2);
-    //     }
+    #[test]
+    fn hash_equality() {
+        // generate two queues with same content
+        // but different buffer alignment
+        let rb1 = {
+            let mut rb1: Queue<i32, u8, MultiCore, 4> = Queue::u8();
+            rb1.enqueue(0).unwrap();
+            rb1.enqueue(0).unwrap();
+            rb1.dequeue().unwrap();
+            rb1.enqueue(0).unwrap();
+            rb1
+        };
+        let rb2 = {
+            let mut rb2: Queue<i32, u8, MultiCore, 4> = Queue::u8();
+            rb2.enqueue(0).unwrap();
+            rb2.enqueue(0).unwrap();
+            rb2
+        };
+        let hash1 = {
+            let mut hasher1 = hash32::FnvHasher::default();
+            hash32::Hash::hash(&rb1, &mut hasher1);
+            let hash1 = hasher1.finish();
+            hash1
+        };
+        let hash2 = {
+            let mut hasher2 = hash32::FnvHasher::default();
+            hash32::Hash::hash(&rb2, &mut hasher2);
+            let hash2 = hasher2.finish();
+            hash2
+        };
+        assert_eq!(hash1, hash2);
+    }
 }
