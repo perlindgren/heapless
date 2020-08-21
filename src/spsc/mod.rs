@@ -302,25 +302,16 @@ macro_rules! impl_ {
         impl<T, const N: usize> Queue<T, $uxx, MultiCore, N> {
             /// Creates an empty queue with a fixed capacity of `N`
             pub const fn $uxx() -> Self {
-                head: Atomic::new(0),
-                tail: Atomic::new(0)
-                buffer: MaybeUninit::uninit(),
+                Self {
+                    head: Atomic::new(0),
+                    tail: Atomic::new(0),
+                    buffer: MaybeUninit::uninit(),
+                }
             }
         }
 
-        // impl<A> crate::i::Queue<A, $uxx, MultiCore> {
-        //     /// `spsc::Queue` `const` constructor; wrap the returned value in
-        //     /// [`spsc::Queue`](struct.Queue.html)
-        //     pub const fn $uxx() -> Self {
-        //         Self {
-        //             buffer: MaybeUninit::uninit(),
-        //             head: Atomic::new(0),
-        //             tail: Atomic::new(0),
-        //         }
-        //     }
-        // }
-
         impl<T, const N: usize> Queue<T, $uxx, SingleCore, N> {
+            /// Creates an empty queue with a fixed capacity of `N` (single core variant)
             pub unsafe fn $uxx_sc() -> Self {
                 Self {
                     buffer: MaybeUninit::uninit(),
@@ -330,129 +321,126 @@ macro_rules! impl_ {
             }
         }
 
-        // impl<T, N, C> Queue<T, N, $uxx, C>
-        // where
-        //     N: ArrayLength<T>,
-        //     C: sealed::XCore,
-        // {
-        //     /// Returns a reference to the item in the front of the queue without dequeuing, or
-        //     /// `None` if the queue is empty.
-        //     ///
-        //     /// # Examples
-        //     /// ```
-        //     /// use heapless::spsc::Queue;
-        //     /// use heapless::consts::*;
-        //     ///
-        //     /// let mut queue: Queue<u8, U235, _> = Queue::u8();
-        //     /// let (mut producer, mut consumer) = queue.split();
-        //     /// assert_eq!(None, consumer.peek());
-        //     /// producer.enqueue(1);
-        //     /// assert_eq!(Some(&1), consumer.peek());
-        //     /// assert_eq!(Some(1), consumer.dequeue());
-        //     /// assert_eq!(None, consumer.peek());
-        //     /// ```
-        //     pub fn peek(&self) -> Option<&T> {
-        //         let cap = self.capacity();
+        impl<T, C, const N: usize> Queue<T, $uxx, C, N>
+        where
+            C: sealed::XCore,
+        {
+            /// Returns a reference to the item in the front of the queue without dequeuing, or
+            /// `None` if the queue is empty.
+            ///
+            /// # Examples
+            /// ```
+            /// use heapless::spsc::Queue;
+            ///
+            /// let mut queue: Queue<u8, 235, _> = Queue::u8();
+            /// let (mut producer, mut consumer) = queue.split();
+            /// assert_eq!(None, consumer.peek());
+            /// producer.enqueue(1);
+            /// assert_eq!(Some(&1), consumer.peek());
+            /// assert_eq!(Some(1), consumer.dequeue());
+            /// assert_eq!(None, consumer.peek());
+            /// ```
+            pub fn peek(&self) -> Option<&T> {
+                let cap = self.capacity();
 
-        //         let head = self.0.head.get();
-        //         let tail = self.0.tail.get();
+                let head = self.head.get();
+                let tail = self.tail.get();
 
-        //         let p = self.0.buffer.as_ptr();
+                let p = self.buffer.as_ptr();
 
-        //         if *head != *tail {
-        //             let item = unsafe { &*(p as *const T).add(usize::from(*head % cap)) };
-        //             Some(item)
-        //         } else {
-        //             None
-        //         }
-        //     }
+                if *head != *tail {
+                    let item = unsafe { &*(p as *const T).add(usize::from(*head % cap)) };
+                    Some(item)
+                } else {
+                    None
+                }
+            }
 
-        //     /// Returns the item in the front of the queue, or `None` if the queue is empty
-        //     pub fn dequeue(&mut self) -> Option<T> {
-        //         let cap = self.capacity();
+            /// Returns the item in the front of the queue, or `None` if the queue is empty
+            pub fn dequeue(&mut self) -> Option<T> {
+                let cap = self.capacity();
 
-        //         let head = self.0.head.get_mut();
-        //         let tail = self.0.tail.get_mut();
+                let head = self.head.get_mut();
+                let tail = self.tail.get_mut();
 
-        //         let p = self.0.buffer.as_ptr();
+                let p = self.buffer.as_ptr();
 
-        //         if *head != *tail {
-        //             let item = unsafe { (p as *const T).add(usize::from(*head % cap)).read() };
-        //             *head = head.wrapping_add(1);
-        //             Some(item)
-        //         } else {
-        //             None
-        //         }
-        //     }
+                if *head != *tail {
+                    let item = unsafe { (p as *const T).add(usize::from(*head % cap)).read() };
+                    *head = head.wrapping_add(1);
+                    Some(item)
+                } else {
+                    None
+                }
+            }
 
-        //     /// Adds an `item` to the end of the queue
-        //     ///
-        //     /// Returns back the `item` if the queue is full
-        //     pub fn enqueue(&mut self, item: T) -> Result<(), T> {
-        //         let cap = self.capacity();
-        //         let head = *self.0.head.get_mut();
-        //         let tail = *self.0.tail.get_mut();
+            /// Adds an `item` to the end of the queue
+            ///
+            /// Returns back the `item` if the queue is full
+            pub fn enqueue(&mut self, item: T) -> Result<(), T> {
+                let cap = self.capacity();
+                let head = *self.head.get_mut();
+                let tail = *self.tail.get_mut();
 
-        //         if tail.wrapping_sub(head) > cap - 1 {
-        //             Err(item)
-        //         } else {
-        //             unsafe { self.enqueue_unchecked(item) }
-        //             Ok(())
-        //         }
-        //     }
+                if tail.wrapping_sub(head) > cap - 1 {
+                    Err(item)
+                } else {
+                    unsafe { self.enqueue_unchecked(item) }
+                    Ok(())
+                }
+            }
 
-        //     /// Adds an `item` to the end of the queue, without checking if it's full
-        //     ///
-        //     /// # Unsafety
-        //     ///
-        //     /// If the queue is full this operation will leak a value (T's destructor won't run on
-        //     /// the value that got overwritten by `item`), *and* will allow the `dequeue` operation
-        //     /// to create a copy of `item`, which could result in `T`'s destructor running on `item`
-        //     /// twice.
-        //     pub unsafe fn enqueue_unchecked(&mut self, item: T) {
-        //         let cap = self.capacity();
-        //         let tail = self.0.tail.get_mut();
+            /// Adds an `item` to the end of the queue, without checking if it's full
+            ///
+            /// # Unsafety
+            ///
+            /// If the queue is full this operation will leak a value (T's destructor won't run on
+            /// the value that got overwritten by `item`), *and* will allow the `dequeue` operation
+            /// to create a copy of `item`, which could result in `T`'s destructor running on `item`
+            /// twice.
+            pub unsafe fn enqueue_unchecked(&mut self, item: T) {
+                let cap = self.capacity();
+                let tail = self.tail.get_mut();
 
-        //         // NOTE(ptr::write) the memory slot that we are about to write to is
-        //         // uninitialized. We use `ptr::write` to avoid running `T`'s destructor on the
-        //         // uninitialized memory
-        //         (self.0.buffer.as_mut_ptr() as *mut T)
-        //             .add(usize::from(*tail % cap))
-        //             .write(item);
-        //         *tail = tail.wrapping_add(1);
-        //     }
+                // NOTE(ptr::write) the memory slot that we are about to write to is
+                // uninitialized. We use `ptr::write` to avoid running `T`'s destructor on the
+                // uninitialized memory
+                (self.buffer.as_mut_ptr() as *mut T)
+                    .add(usize::from(*tail % cap))
+                    .write(item);
+                *tail = tail.wrapping_add(1);
+            }
 
-        //     /// Returns the number of elements in the queue
-        //     pub fn len(&self) -> $uxx {
-        //         let head = self.0.head.load_relaxed();
-        //         let tail = self.0.tail.load_relaxed();
-        //         tail.wrapping_sub(head)
-        //     }
-        // }
+            /// Returns the number of elements in the queue
+            pub fn len(&self) -> $uxx {
+                let head = self.head.load_relaxed();
+                let tail = self.tail.load_relaxed();
+                tail.wrapping_sub(head)
+            }
+        }
 
-        // impl<T, N, C> Clone for Queue<T, N, $uxx, C>
-        // where
-        //     T: Clone,
-        //     N: ArrayLength<T>,
-        //     C: sealed::XCore,
-        // {
-        //     fn clone(&self) -> Self {
-        //         let mut new: Queue<T, N, $uxx, C> = Queue(crate::i::Queue {
-        //             buffer: MaybeUninit::uninit(),
-        //             head: Atomic::new(0),
-        //             tail: Atomic::new(0),
-        //         });
+        impl<T, C, const N: usize> Clone for Queue<T, $uxx, C, N>
+        where
+            T: Clone,
+            C: sealed::XCore,
+        {
+            fn clone(&self) -> Self {
+                let mut new: Queue<T, $uxx, C, N> = Queue {
+                    buffer: MaybeUninit::uninit(),
+                    head: Atomic::new(0),
+                    tail: Atomic::new(0),
+                };
 
-        //         for s in self.iter() {
-        //             unsafe {
-        //                 // NOTE(unsafe) new.capacity() == self.capacity() <= self.len()
-        //                 // no overflow possible
-        //                 new.enqueue_unchecked(s.clone());
-        //             }
-        //         }
-        //         new
-        //     }
-        // }
+                for s in self.iter() {
+                    unsafe {
+                        // NOTE(unsafe) new.capacity() == self.capacity() <= self.len()
+                        // no overflow possible
+                        new.enqueue_unchecked(s.clone());
+                    }
+                }
+                new
+            }
+        }
     };
 }
 
@@ -482,17 +470,17 @@ macro_rules! impl_ {
 //     }
 // }
 
-// PER: Do we need this?
-impl<T, const N: usize> Queue<T, usize, SingleCore, N> {
-    /// Alias for [`spsc::Queue::usize_sc`](struct.Queue.html#method.usize_sc)
-    pub unsafe fn new_sc() -> Self {
-        Queue::new_sc()
-    }
-}
+// // PER: Do we need this?
+// impl<T, const N: usize> Queue<T, usize, SingleCore, N> {
+//     /// Alias for [`spsc::Queue::usize_sc`](struct.Queue.html#method.usize_sc)
+//     pub unsafe fn new_sc() -> Self {
+//         Queue::new_sc()
+//     }
+// }
 
 impl_!(u8, u8_sc);
-// impl_!(16, u16_sc);
-// impl_!(usize, usize_sc);
+impl_!(u16, u16_sc);
+impl_!(usize, usize_sc);
 
 impl<T, U, C, U2, C2, const N: usize, const N2: usize> PartialEq<Queue<T, U2, C2, N2>>
     for Queue<T, U, C, N>
