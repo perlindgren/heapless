@@ -85,8 +85,8 @@ pub use string::String;
 pub use vec::Vec;
 // pub use histbuf::HistoryBuffer;
 
-// // NOTE this code was last ported from v0.4.1 of the indexmap crate
-// mod indexmap;
+// NOTE this code was last ported from v0.4.1 of the indexmap crate
+mod indexmap;
 // mod indexset;
 // mod linear_map;
 mod string;
