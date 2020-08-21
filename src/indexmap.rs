@@ -88,7 +88,6 @@ macro_rules! probe_loop {
 struct CoreMap<K, V, const N: usize>
 where
     K: Eq + Hash,
-    //    N: ArrayLength<Bucket<K, V>> + ArrayLength<Option<Pos>>,
 {
     entries: Vec<Bucket<K, V>, N>,
     indices: [Option<Pos>; N],
@@ -97,7 +96,6 @@ where
 impl<K, V, const N: usize> CoreMap<K, V, N>
 where
     K: Eq + Hash,
-    // N: ArrayLength<Bucket<K, V>> + ArrayLength<Option<Pos>>,
 {
     // TODO turn into a `const fn`; needs `mem::zeroed` to be a `const fn`
     fn new() -> Self {
@@ -274,7 +272,6 @@ impl<K, V, const N: usize> Clone for CoreMap<K, V, N>
 where
     K: Eq + Hash + Clone,
     V: Clone,
-    //   N: ArrayLength<Bucket<K, V>> + ArrayLength<Option<Pos>>,
 {
     fn clone(&self) -> Self {
         Self {
@@ -329,7 +326,6 @@ where
 pub struct IndexMap<K, V, S, const N: usize>
 where
     K: Eq + Hash,
-    // N: ArrayLength<Bucket<K, V>> + ArrayLength<Option<Pos>>,
 {
     core: CoreMap<K, V, N>,
     build_hasher: S,
@@ -339,7 +335,6 @@ impl<K, V, S, const N: usize> IndexMap<K, V, BuildHasherDefault<S>, N>
 where
     K: Eq + Hash,
     S: Default + Hasher,
-    //     N: ArrayLength<Bucket<K, V>> + ArrayLength<Option<Pos>> + PowerOfTwo,
 {
     // TODO turn into a `const fn`; needs `mem::zeroed` to be a `const fn`
     /// Creates an empty `IndexMap`.
@@ -357,7 +352,6 @@ impl<K, V, S, const N: usize> IndexMap<K, V, S, N>
 where
     K: Eq + Hash,
     S: BuildHasher,
-    //   N: ArrayLength<Bucket<K, V>> + ArrayLength<Option<Pos>>,
 {
     /* Public API */
     /// Returns the number of elements the map can hold
@@ -926,15 +920,13 @@ mod tests {
 
     //use generic_array::typenum::Unsigned;
 
-    use crate::FnvIndexMap;
+    use crate::indexmap::FnvIndexMap;
 
     #[test]
     fn size() {
-        type Cap = U4;
-
-        let cap = Cap::to_usize();
+        const cap: usize = 4;
         assert_eq!(
-            mem::size_of::<FnvIndexMap<i16, u16, Cap>>(),
+            mem::size_of::<FnvIndexMap<i16, u16, cap>>(),
             cap * mem::size_of::<u32>() + // indices
                 cap * (mem::size_of::<i16>() + // key
                      mem::size_of::<u16>() + // value
@@ -947,10 +939,10 @@ mod tests {
     #[test]
     fn partial_eq() {
         {
-            let mut a: FnvIndexMap<_, _, U4> = FnvIndexMap::new();
+            let mut a: FnvIndexMap<_, _, 4> = FnvIndexMap::new();
             a.insert("k1", "v1").unwrap();
 
-            let mut b: FnvIndexMap<_, _, U4> = FnvIndexMap::new();
+            let mut b: FnvIndexMap<_, _, 4> = FnvIndexMap::new();
             b.insert("k1", "v1").unwrap();
 
             assert!(a == b);
@@ -961,11 +953,11 @@ mod tests {
         }
 
         {
-            let mut a: FnvIndexMap<_, _, U4> = FnvIndexMap::new();
+            let mut a: FnvIndexMap<_, _, 4> = FnvIndexMap::new();
             a.insert("k1", "v1").unwrap();
             a.insert("k2", "v2").unwrap();
 
-            let mut b: FnvIndexMap<_, _, U4> = FnvIndexMap::new();
+            let mut b: FnvIndexMap<_, _, 4> = FnvIndexMap::new();
             b.insert("k2", "v2").unwrap();
             b.insert("k1", "v1").unwrap();
 
