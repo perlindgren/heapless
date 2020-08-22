@@ -106,9 +106,9 @@ where
     where
         D: Deserializer<'de>,
     {
-        struct ValueVisitor<'de, T, const N: usize>(PhantomData<(&'de (), T, N)>);
+        struct ValueVisitor<'de, T, const N: usize>(PhantomData<(&'de (), T)>);
 
-        impl<'de, T, const N: usize> de::Visitor<'de> for ValueVisitor<'de, T, N>
+        impl<'de, T, const N: usize> serde::de::Visitor<'de> for ValueVisitor<'de, T, N>
         where
             //    N: ArrayLength<T>,
             T: Deserialize<'de>,

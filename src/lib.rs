@@ -95,8 +95,8 @@ mod vec;
 
 #[cfg(feature = "serde")]
 mod de;
-// #[cfg(feature = "serde")]
-// mod ser;
+#[cfg(feature = "serde")]
+mod ser;
 
 pub mod binary_heap;
 // pub mod i;
