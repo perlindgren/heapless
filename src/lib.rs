@@ -100,10 +100,10 @@ mod de;
 
 pub mod binary_heap;
 // pub mod i;
+#[cfg(all(has_cas, feature = "cas"))]
+pub mod mpmc;
 // #[cfg(all(has_cas, feature = "cas"))]
-// pub mod mpmc;
-// #[cfg(all(has_cas, feature = "cas"))]
-// pub mod pool;
+pub mod pool;
 #[cfg(has_atomics)]
 pub mod spsc;
 
