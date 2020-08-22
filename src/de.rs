@@ -54,52 +54,50 @@ use crate::{
 //     }
 // }
 
-// impl<'de, T, S, const N: usize> Deserialize<'de> for IndexSet<T, BuildHasherDefault<S>, N>
-// where
-//     T: Eq + Hash + Deserialize<'de>,
-//     S: Hasher + Default,
-//     //  N: ArrayLength<Bucket<T, ()>> + ArrayLength<Option<Pos>> + PowerOfTwo,
-// {
-//     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-//     where
-//         D: Deserializer<'de>,
-//     {
-//         struct ValueVisitor<'de, T, S, const N: usize>(PhantomData<(&'de (), T, S, N)>);
+impl<'de, T, S, const N: usize> Deserialize<'de> for IndexSet<T, BuildHasherDefault<S>, N>
+where
+    T: Eq + Hash + Deserialize<'de>,
+    S: Hasher + Default,
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct ValueVisitor<'de, T, S, const N: usize>(PhantomData<(&'de (), T, S)>);
 
-//         impl<'de, T, S, N> de::Visitor<'de> for ValueVisitor<'de, T, S, N>
-//         where
-//             T: Eq + Hash + Deserialize<'de>,
-//             S: Hasher + Default,
-//             // N: ArrayLength<Bucket<T, ()>> + ArrayLength<Option<Pos>> + PowerOfTwo,
-//         {
-//             type Value = IndexSet<T, BuildHasherDefault<S>, N>;
+        impl<'de, T, S, const N: usize> de::Visitor<'de> for ValueVisitor<'de, T, S, N>
+        where
+            T: Eq + Hash + Deserialize<'de>,
+            S: Hasher + Default,
+            // N: ArrayLength<Bucket<T, ()>> + ArrayLength<Option<Pos>> + PowerOfTwo,
+        {
+            type Value = IndexSet<T, BuildHasherDefault<S>, N>;
 
-//             fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-//                 formatter.write_str("a sequence")
-//             }
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("a sequence")
+            }
 
-//             fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-//             where
-//                 A: SeqAccess<'de>,
-//             {
-//                 let mut values = IndexSet::new();
+            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            where
+                A: SeqAccess<'de>,
+            {
+                let mut values = IndexSet::new();
 
-//                 while let Some(value) = seq.next_element()? {
-//                     if values.insert(value).is_err() {
-//                         return Err(A::Error::invalid_length(values.capacity() + 1, &self))?;
-//                     }
-//                 }
+                while let Some(value) = seq.next_element()? {
+                    if values.insert(value).is_err() {
+                        return Err(A::Error::invalid_length(values.capacity() + 1, &self))?;
+                    }
+                }
 
-//                 Ok(values)
-//             }
-//         }
-//         deserializer.deserialize_seq(ValueVisitor(PhantomData))
-//     }
-// }
+                Ok(values)
+            }
+        }
+        deserializer.deserialize_seq(ValueVisitor(PhantomData))
+    }
+}
 
 impl<'de, T, const N: usize> Deserialize<'de> for Vec<T, N>
 where
-    //    N: ArrayLength<T>,
     T: Deserialize<'de>,
 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -110,7 +108,6 @@ where
 
         impl<'de, T, const N: usize> serde::de::Visitor<'de> for ValueVisitor<'de, T, N>
         where
-            //    N: ArrayLength<T>,
             T: Deserialize<'de>,
         {
             type Value = Vec<T, N>;
