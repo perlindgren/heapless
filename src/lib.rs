@@ -93,8 +93,8 @@ mod linear_map;
 mod string;
 mod vec;
 
-// #[cfg(feature = "serde")]
-// mod de;
+#[cfg(feature = "serde")]
+mod de;
 // #[cfg(feature = "serde")]
 // mod ser;
 
