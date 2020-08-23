@@ -1,3 +1,5 @@
+//! missing doc
+
 use core::{fmt, marker::PhantomData};
 
 // use generic_array::{typenum::PowerOfTwo, ArrayLength};
@@ -12,47 +14,47 @@ use crate::{
 
 // Sequential containers
 
-// impl<'de, T, KIND, const N: usize> Deserialize<'de> for BinaryHeap<T, KIND, N>
-// where
-//     T: Ord + Deserialize<'de>,
+impl<'de, T, KIND, const N: usize> Deserialize<'de> for BinaryHeap<T, KIND, N>
+where
+    T: Ord + Deserialize<'de>,
 
-//     KIND: BinaryHeapKind,
-// {
-//     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-//     where
-//         D: Deserializer<'de>,
-//     {
-//         struct ValueVisitor<'de, T, KIND, const N: usize>(PhantomData<(&'de (), T, KIND, N)>);
+    KIND: BinaryHeapKind,
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct ValueVisitor<'de, T, KIND, const N: usize>(PhantomData<(&'de (), T, KIND)>);
 
-//         impl<'de, T, KIND, const N: usize> de::Visitor<'de> for ValueVisitor<'de, T, KIND, N>
-//         where
-//             T: Ord + Deserialize<'de>,
-//             KIND: BinaryHeapKind,
-//         {
-//             type Value = BinaryHeap<T, KIND, N>;
+        impl<'de, T, KIND, const N: usize> de::Visitor<'de> for ValueVisitor<'de, T, KIND, N>
+        where
+            T: Ord + Deserialize<'de>,
+            KIND: BinaryHeapKind,
+        {
+            type Value = BinaryHeap<T, KIND, N>;
 
-//             fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-//                 formatter.write_str("a sequence")
-//             }
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("a sequence")
+            }
 
-//             fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-//             where
-//                 A: SeqAccess<'de>,
-//             {
-//                 let mut values = BinaryHeap::new();
+            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            where
+                A: SeqAccess<'de>,
+            {
+                let mut values = BinaryHeap::new();
 
-//                 while let Some(value) = seq.next_element()? {
-//                     if values.push(value).is_err() {
-//                         return Err(A::Error::invalid_length(values.capacity() + 1, &self))?;
-//                     }
-//                 }
+                while let Some(value) = seq.next_element()? {
+                    if values.push(value).is_err() {
+                        return Err(A::Error::invalid_length(values.capacity() + 1, &self))?;
+                    }
+                }
 
-//                 Ok(values)
-//             }
-//         }
-//         deserializer.deserialize_seq(ValueVisitor(PhantomData))
-//     }
-// }
+                Ok(values)
+            }
+        }
+        deserializer.deserialize_seq(ValueVisitor(PhantomData))
+    }
+}
 
 impl<'de, T, S, const N: usize> Deserialize<'de> for IndexSet<T, BuildHasherDefault<S>, N>
 where
@@ -69,7 +71,6 @@ where
         where
             T: Eq + Hash + Deserialize<'de>,
             S: Hasher + Default,
-            // N: ArrayLength<Bucket<T, ()>> + ArrayLength<Option<Pos>> + PowerOfTwo,
         {
             type Value = IndexSet<T, BuildHasherDefault<S>, N>;
 
@@ -135,146 +136,138 @@ where
     }
 }
 
-// // Dictionaries
+// Dictionaries
 
-// impl<'de, K, V, N, S> Deserialize<'de> for IndexMap<K, V, N, BuildHasherDefault<S>>
-// where
-//     K: Eq + Hash + Deserialize<'de>,
-//     V: Deserialize<'de>,
-//     N: ArrayLength<Bucket<K, V>> + ArrayLength<Option<Pos>> + PowerOfTwo,
-//     S: Default + Hasher,
-// {
-//     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-//     where
-//         D: Deserializer<'de>,
-//     {
-//         struct ValueVisitor<'de, K, V, N, S>(PhantomData<(&'de (), K, V, N, S)>);
+impl<'de, K, V, S, const N: usize> Deserialize<'de> for IndexMap<K, V, BuildHasherDefault<S>, N>
+where
+    K: Eq + Hash + Deserialize<'de>,
+    V: Deserialize<'de>,
+    S: Default + Hasher,
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct ValueVisitor<'de, K, V, S, const N:usize>(PhantomData<(&'de (), K, V, S)>);
 
-//         impl<'de, K, V, N, S> de::Visitor<'de> for ValueVisitor<'de, K, V, N, S>
-//         where
-//             K: Eq + Hash + Deserialize<'de>,
-//             V: Deserialize<'de>,
-//             N: ArrayLength<Bucket<K, V>> + ArrayLength<Option<Pos>> + PowerOfTwo,
-//             S: Default + Hasher,
-//         {
-//             type Value = IndexMap<K, V, N, BuildHasherDefault<S>>;
+        impl<'de, K, V, S, const N:usize> de::Visitor<'de> for ValueVisitor<'de, K, V, S, N>
+        where
+            K: Eq + Hash + Deserialize<'de>,
+            V: Deserialize<'de>,
+            S: Default + Hasher,
+        {
+            type Value = IndexMap<K, V, BuildHasherDefault<S>, N>;
 
-//             fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-//                 formatter.write_str("a map")
-//             }
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("a map")
+            }
 
-//             fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
-//             where
-//                 A: MapAccess<'de>,
-//             {
-//                 let mut values = IndexMap::new();
+            fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+            where
+                A: MapAccess<'de>,
+            {
+                let mut values = IndexMap::new();
 
-//                 while let Some((key, value)) = map.next_entry()? {
-//                     if values.insert(key, value).is_err() {
-//                         return Err(A::Error::invalid_length(values.capacity() + 1, &self))?;
-//                     }
-//                 }
+                while let Some((key, value)) = map.next_entry()? {
+                    if values.insert(key, value).is_err() {
+                        return Err(A::Error::invalid_length(values.capacity() + 1, &self))?;
+                    }
+                }
 
-//                 Ok(values)
-//             }
-//         }
-//         deserializer.deserialize_map(ValueVisitor(PhantomData))
-//     }
-// }
+                Ok(values)
+            }
+        }
+        deserializer.deserialize_map(ValueVisitor(PhantomData))
+    }
+}
 
-// impl<'de, K, V, N> Deserialize<'de> for LinearMap<K, V, N>
-// where
-//     K: Eq + Deserialize<'de>,
-//     V: Deserialize<'de>,
-//     N: ArrayLength<(K, V)>,
-// {
-//     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-//     where
-//         D: Deserializer<'de>,
-//     {
-//         struct ValueVisitor<'de, K, V, N>(PhantomData<(&'de (), K, V, N)>);
+impl<'de, K, V, const N:usize> Deserialize<'de> for LinearMap<K, V, N>
+where
+    K: Eq + Deserialize<'de>,
+    V: Deserialize<'de>,
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct ValueVisitor<'de, K, V, const N:usize>(PhantomData<(&'de (), K, V)>);
 
-//         impl<'de, K, V, N> de::Visitor<'de> for ValueVisitor<'de, K, V, N>
-//         where
-//             K: Eq + Deserialize<'de>,
-//             V: Deserialize<'de>,
-//             N: ArrayLength<(K, V)>,
-//         {
-//             type Value = LinearMap<K, V, N>;
+        impl<'de, K, V, const N:usize> de::Visitor<'de> for ValueVisitor<'de, K, V, N>
+        where
+            K: Eq + Deserialize<'de>,
+            V: Deserialize<'de>,
+        {
+            type Value = LinearMap<K, V, N>;
 
-//             fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-//                 formatter.write_str("a map")
-//             }
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("a map")
+            }
 
-//             fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
-//             where
-//                 A: MapAccess<'de>,
-//             {
-//                 let mut values = LinearMap::new();
+            fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+            where
+                A: MapAccess<'de>,
+            {
+                let mut values = LinearMap::new();
 
-//                 while let Some((key, value)) = map.next_entry()? {
-//                     if values.insert(key, value).is_err() {
-//                         return Err(A::Error::invalid_length(values.capacity() + 1, &self))?;
-//                     }
-//                 }
+                while let Some((key, value)) = map.next_entry()? {
+                    if values.insert(key, value).is_err() {
+                        return Err(A::Error::invalid_length(values.capacity() + 1, &self))?;
+                    }
+                }
 
-//                 Ok(values)
-//             }
-//         }
-//         deserializer.deserialize_map(ValueVisitor(PhantomData))
-//     }
-// }
+                Ok(values)
+            }
+        }
+        deserializer.deserialize_map(ValueVisitor(PhantomData))
+    }
+}
 
-// // String containers
+// String containers
 
-// impl<'de, N> Deserialize<'de> for String<N>
-// where
-//     N: ArrayLength<u8>,
-// {
-//     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-//     where
-//         D: Deserializer<'de>,
-//     {
-//         struct ValueVisitor<'de, N>(PhantomData<(&'de (), N)>);
+impl<'de, const N:usize> Deserialize<'de> for String<N>
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct ValueVisitor<'de, const N:usize>(PhantomData<(&'de ())>);
 
-//         impl<'de, N> de::Visitor<'de> for ValueVisitor<'de, N>
-//         where
-//             N: ArrayLength<u8>,
-//         {
-//             type Value = String<N>;
+        impl<'de, const N:usize > de::Visitor<'de> for ValueVisitor<'de, N>
+        {
+            type Value = String<N>;
 
-//             fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-//                 write!(
-//                     formatter,
-//                     "a string no more than {} bytes long",
-//                     N::to_u64()
-//                 )
-//             }
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                write!(
+                    formatter,
+                    "a string no more than {} bytes long",
+                    N as u64
+                )
+            }
 
-//             fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
-//             where
-//                 E: de::Error,
-//             {
-//                 let mut s = String::new();
-//                 s.push_str(v)
-//                     .map_err(|_| E::invalid_length(v.len(), &self))?;
-//                 Ok(s)
-//             }
+            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                let mut s = String::new();
+                s.push_str(v)
+                    .map_err(|_| E::invalid_length(v.len(), &self))?;
+                Ok(s)
+            }
 
-//             fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
-//             where
-//                 E: de::Error,
-//             {
-//                 let mut bytes = Vec::new();
-//                 if bytes.extend_from_slice(v).is_err() {
-//                     return Err(E::invalid_value(de::Unexpected::Bytes(v), &self));
-//                 }
+            fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                let mut bytes = Vec::new();
+                if bytes.extend_from_slice(v).is_err() {
+                    return Err(E::invalid_value(de::Unexpected::Bytes(v), &self));
+                }
 
-//                 String::from_utf8(bytes)
-//                     .map_err(|_| E::invalid_value(de::Unexpected::Bytes(v), &self))
-//             }
-//         }
+                String::from_utf8(bytes)
+                    .map_err(|_| E::invalid_value(de::Unexpected::Bytes(v), &self))
+            }
+        }
 
-//         deserializer.deserialize_str(ValueVisitor::<'de, N>(PhantomData))
-//     }
-// }
+        deserializer.deserialize_str(ValueVisitor::<'de, N>(PhantomData))
+    }
+}

@@ -1,3 +1,5 @@
+//! missing doc
+
 // use generic_array::{typenum::PowerOfTwo, ArrayLength};
 use hash32::{BuildHasher, Hash};
 use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
